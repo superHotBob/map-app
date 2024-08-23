@@ -16,19 +16,22 @@ export default function TabLayout() {
       }}>
       <Tabs.Screen
         name="index"
+       
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
+          tabBarLabelStyle: {color: 'blue',fontSize: 0},
+          
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon name={focused ? 'home' : 'home-outline'} color='blue' />
           ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="map"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'code-slash' : 'code-slash-outline'} color={color} />
+          
+          tabBarLabelStyle: {color: 'blue',fontSize: 0},
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon name={focused ? 'map' : 'map-outline'} color='blue' />
           ),
         }}
       />
