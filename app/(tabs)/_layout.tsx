@@ -15,23 +15,32 @@ export default function TabLayout() {
         headerShown: false,
       }}>
       <Tabs.Screen
-        name="index"
-       
+        name="index"       
         options={{
-          tabBarLabelStyle: {color: 'blue',fontSize: 0},
-          
+          tabBarShowLabel: false,
+          tabBarActiveBackgroundColor: '#ddd',         
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon name={focused ? 'home' : 'home-outline'} color='blue' />
+            <TabBarIcon name={focused ? 'home' : 'home-outline'} color='#192f6a' />
           ),
         }}
       />
       <Tabs.Screen
         name="map"
-        options={{
-          
-          tabBarLabelStyle: {color: 'blue',fontSize: 0},
+        options={{          
+          tabBarShowLabel: false,
+          tabBarActiveBackgroundColor: '#ddd',
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon name={focused ? 'map' : 'map-outline'} color='blue' />
+            <TabBarIcon name={focused ? 'map' : 'map-outline'} color='#192f6a' />
+          ),
+        }}
+      />
+       <Tabs.Screen
+        name="camera"
+        options={{          
+          tabBarShowLabel: false,
+          tabBarActiveBackgroundColor: '#ddd',
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon name={focused ? 'camera' : 'camera-outline'} color='#192f6a' />
           ),
         }}
       />

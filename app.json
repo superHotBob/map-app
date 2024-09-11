@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "map-app",
-    "slug": "map-app",
+    "name": "tracker",
+    "slug": "tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -31,7 +31,21 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow my_map to use your location."
+          "locationAlwaysAndWhenInUsePermission": "Allow tracker to use your location."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera"         
+        }
+      ],     
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow tracker to access your photos.",
+          "savePhotosPermission": "Allow tracker to save photos.",
+          "isAccessMediaLocationEnabled": true
         }
       ]
     ],
