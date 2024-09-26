@@ -1,4 +1,5 @@
-
+import { store } from '../store';
+import { Provider } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -44,7 +45,7 @@ export default function RootLayout() {
       },
     );
   return (
-    
+    <Provider store={store}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen 
@@ -52,7 +53,7 @@ export default function RootLayout() {
           options={{
             headerTintColor: 'blue', 
             headerTitleAlign: 'center', 
-            title: 'Фото', 
+            title: 'Photos', 
             headerTitleStyle:{color: 'blue',fontWeight: 'bold', fontFamily: 'SpaceMono'},  
             headerShown: true 
           }} 
@@ -62,7 +63,7 @@ export default function RootLayout() {
           options={{
             headerTintColor: 'blue', 
             headerTitleAlign: 'center', 
-            title: 'Траектория движения', 
+            title: 'Path', 
             headerTitleStyle:{color: 'blue',fontWeight: 'bold', fontFamily: 'SpaceMono'},  
             headerShown: true,
             headerRight: ()=> <Pressable onPress={showAlert}>
@@ -72,6 +73,6 @@ export default function RootLayout() {
         />
         <Stack.Screen name="+not-found" />
       </Stack>
-    
+    </Provider>
   );
 }

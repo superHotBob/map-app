@@ -1,124 +1,99 @@
-import { Button, Dimensions, Alert, Text, TouchableHighlight, FlatList, TextInput } from 'react-native';
+import { StyleSheet, View, Dimensions, Alert, Text, TouchableHighlight, StatusBar } from 'react-native';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import MapView, { Circle, Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import getDistance from 'geolib/es/getDistance';
-import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import * as MediaLibrary from 'expo-media-library';
-import { captureRef } from 'react-native-view-shot';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { useSelector, useDispatch } from 'react-redux';
+import { addpoint, deletepoint, setname } from '@/reduser';
+import Enter from '../../components/enter';
+
+
+import { captureRef } from 'react-native-view-shot';
 import * as SQLite from 'expo-sqlite';
-
-
-const points = [
-  { latitude: 54.5400529, longitude: 27.8882262 },
-  { latitude: 54.5417529, longitude: 27.8842262 },
-  { latitude: 54.5427529, longitude: 27.8832262 },
-  { latitude: 54.5435297, longitude: 27.8822262 },
-  { latitude: 54.5457529, longitude: 27.8842262 },
-  { latitude: 54.5487529, longitude: 27.8892262 },
-  { latitude: 54.5427529, longitude: 27.8902262 },
-  { latitude: 54.5437529, longitude: 27.8912262 },
-  { latitude: 54.5400529, longitude: 27.8882262 }
-]
+import RunBlock from '@/components/runblock';
 
 const { height, width } = Dimensions.get('window');
 
-const date = new Date().toLocaleDateString('ru-RU', { timeZone: 'europe/minsk' });
-const PathTime = (i: number) => {
-  console.log((Date.now() - i) / (1000 * 60))
-  return (Date.now() - i) / (1000 * 60)
+
+
+function SecundsToTime(i) {  
+  const hours = (i/3600).toFixed(0);       
+  const mins = Math.trunc((i - hours*3600)/60);
+  const sec = i - hours*3600 - mins*60;       
+  return ( hours + ' : ' + mins + ' : ' + sec.toFixed(0)); 
 }
 const Map = () => {
-  const ref = useRef(null);  
-  const intervalRef = useRef<string>(null);
-  const router = useRouter()
+  const refzoom = useRef();
+  const timeRef = useRef<number>(null);
+  const router = useRouter();
   const [status, requestPermission] = MediaLibrary.usePermissions();
-  const [pathData, onChangePathData] = useState({name: '', start: 0});
+  const [pathData, setPathDate] = useState(0);
   const [startStop, setStartStop] = useState(true);
+  const [currentTime, setCurrentTime] = useState(Date.now())
   const [path, setPath] = useState(0);
-  const [time, setTime] = useState(0);
   const [distance, setDistance] = useState(0);
-  const [nodes, setNode] = useState<Array<{ latitude: number, longitude: number }>>([])
+  const [typeMap, settypeMap] = useState<string>('standard');
   const [zoom, setZoom] = useState(12);
-  const [typeMap, settypeMap] = useState<String>('standard');
+  
+  const [heightBlock, setHeightBlock] = useState(height - 45);
+  const [speed, setSpeed ] = useState(0);
 
-  async function handleStart() {
-    const step = await AsyncStorage.getItem('time');
+  const { nodes, name, movie, time } = useSelector((state) => state.track);
+  const dispatch = useDispatch();
+ 
+  useFocusEffect(useCallback(()=>{StatusBar.setBarStyle('dark-content');},[]))
+
+  useEffect(() => {
+    StatusBar.setBarStyle('dark-content');
     setStartStop(true);
-    clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      setTime(time => time + 1);
-      GetLocation();
-
-    }, Number(step) * 10000);
-  };
-
-  function handleStop() {
-    clearInterval(intervalRef.current);
-    setTime(0);
-    setStartStop(false);
-  };
-  function handlePause() {
-    clearInterval(intervalRef.current);
-    setStartStop(false);
-  };
-  const GetLocation = async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-
-    if (status !== 'granted') {
-      console.log('Permission to access location was denied');
-      return;
-    }
-    const data = await Location.getCurrentPositionAsync({});
-    const point = {
-      longitude: data.coords.longitude + (0.01 - Math.random() / 50),
-      latitude: data.coords.latitude + (0.01 + Math.random() / 50),
-      type: 'path'
-    };
-    setNode(prev => ([...prev, point]));
+    timeRef.current = Date.now();
+  },[name]);
+ 
+  const GetLocations = async (i:{coordinate: {speed: number}}) => {
+    // let { status } = await Location.requestForegroundPermissionsAsync();
+    // if (status !== 'granted') {
+    //   console.log('Permission to access location was denied');
+    //   return;
+    // };
+    setCurrentTime(i.coordinate.timestamp);
+    console.log(nodes)
     
+    if (movie === 'running') {
+      
+      const point = {
+        longitude: nodes.length === 0 ? i.coordinate.longitude  : 
+        nodes[nodes.length - 1].longitude + Math.random() / 50,
+        latitude:   i.coordinate.latitude, 
+        type: movie
+      };
+      dispatch(addpoint(point));
+      if( nodes.length > 1) {
+        setSpeed(i.coordinate.speed + Math.random()*10);
+        GetDistance();
+      }
+    } else {
+      const point = {
+        longitude: nodes.length === 0 ? i.coordinate.longitude : i.coordinate.longitude + (0.01 - Math.random() / 50),
+        latitude: nodes.length === 0 ? i.coordinate.latitude : i.coordinate.latitude + (0.01 + Math.random() / 50),
+        type: movie
+      };
+      dispatch(addpoint(point));
+      if( nodes.length > 0) {
+        GetDistance();
+      }
+    }
   };
-
-
-  //   async function GetMapCoords() {
-  //     const coords = await ref?.current?.getMapBoundaries();
-  //     const leftTop = Object.values(coords.northEast)
-  //     const rightBottom = Object.values(coords.southWest)
-  //     const mapCoords = [...rightBottom,...leftTop ].map(i => i.toFixed(4))
-
-  //     GetMasters(mapCoords)       
-
-  //     const distance = getDistance(
-  //         { latitude: leftTop[0], longitude: leftTop[1] },
-  //         { latitude: rightBottom[0], longitude: rightBottom[1] },
-  //         {Accuracy: 10}
-  //     );
-  //     setRadius(Math.ceil(distance/2000))
-
-  // };
-
-
-
-  useEffect(() => GetDistance(), [nodes]);
-  // useFocusEffect(
-  //   useCallback(() => {
-
-  //     if (intervalRef.current === null) {
-  //       handleStart();
-  //       setStartStop(true);
-  //       GetLocation();
-  //     } else { }
-  //   }, [])
-  // );
   const Save = () => {
     Alert.alert('Сохранить путь',
-      pathData.name + ', \n' + 'time: ' + time + ' min , \n' + 'path: ' + path + ' m.',
+      name + ', \n' + 'time: ' + SecundsToTime((Date.now() - timeRef.current)/1000) + ',' +' \n' + 'path: ' + path + ' m.',
       [
         {
           text: 'НЕТ',
@@ -129,19 +104,49 @@ const Map = () => {
       ]
     );
   };
+  const SavePath = async () => {
+    try {
+      const localUri = await captureRef(refzoom, {
+        fileName: name + '_',
+        format: 'jpg',
+        height: height - 225,
+        width: width,
+        quality: 1,
+      });
+      const { id } = await MediaLibrary.createAssetAsync(localUri);
+      const album = await AsyncStorage.getItem('album');
+      const db = await SQLite.openDatabaseAsync('tracker', {
+        useNewConnection: true
+      });
+      const photo_count = nodes.filter(i => i.type === 'photo').length;
+      if (!album) {
+        const new_album = await MediaLibrary.createAlbumAsync("TRACKER", id);
+        await AsyncStorage.setItem('album', new_album.id.toString());
+        await MediaLibrary.addAssetsToAlbumAsync([id], new_album.id.toString(), false);
+        await db.runAsync(`INSERT INTO paths (name, idpath, begintime, endtime, images, path) VALUES (?,?,?,?,?,?)`, [name, id, timeRef.current, Date.now(), photo_count, path]);
+      } else {
+        await MediaLibrary.addAssetsToAlbumAsync([id], album, false);
+        await db.runAsync(`INSERT INTO paths (name, idpath, begintime, endtime, images, path) VALUES (?,?,?,?,?,?)`, [name, id, timeRef.current , Date.now(), photo_count, path]);
+      }
+      dispatch(deletepoint([]));
+      dispatch(setname(''));
+      setDistance(0);
+      setPath(0);
+      router.push('/');
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   const DeletePath = () => {
-    setTime(0);
-    setNode([]);
+    dispatch(deletepoint([]));
+    dispatch(setname(''));
     setDistance(0);
     setPath(0);
-    intervalRef.current = null;
-    setStartStop(true);
-    handleStop();
     router.push('/');
   };
 
   function GetDistance() {
-    if (nodes.length === 0) return;
     const distance = getDistance(
       { latitude: nodes[0].latitude, longitude: nodes[0].longitude },
       { latitude: nodes.slice(-1)[0].latitude, longitude: nodes.slice(-1)[0].longitude },
@@ -160,154 +165,121 @@ const Map = () => {
     )
     return distance;
   };
-  function StartPath() {
-    onChangePathData(prev=>({...prev,...{start: Date.now()}}))
-    console.log('start', pathData.name)
-
-    handleStart();
-    setStartStop(true);
-    GetLocation();
-  };
   function GetPath() {
     const path = nodes.reduce((acu, curr, index) =>
-      acu + Distance(nodes[index], nodes[index + 1]), 0)
+      acu + Distance(curr, nodes[index + 1]), 0)
     setPath(path)
   };
+
+
+
+  
   const ZoomUp = async () => {
-    let ss = await ref?.current?.getCamera();
+    let ss = await refzoom.current?.getCamera();
     ss.zoom += 0.7;
-    await ref.current.animateCamera(ss);
+    await refzoom.current?.animateCamera(ss);
     setZoom(zoom + 0.7)
   };
   const ZoomDown = async () => {
-    let ss = await ref?.current?.getCamera();
+    let ss = await refzoom.current?.getCamera();
     ss.zoom -= 0.7;
-    await ref.current?.animateCamera(ss);
+    await refzoom.current?.animateCamera(ss);
     setZoom(zoom - 0.7)
   };
-  const SavePath = async () => {
-    
-    try {
-      const localUri = await captureRef(ref, {
-        fileName: pathData.name + '_',
-        format: 'jpg',
-        height: height - 225,
-        width: width,
-        quality: 1,
-      });
-      const { id } = await MediaLibrary.createAssetAsync(localUri);
-      const album = await AsyncStorage.getItem('album');
-      const db = await SQLite.openDatabaseAsync('tracker',{
-        useNewConnection: true
-      });
-      if (!album) {
-        const new_album = await MediaLibrary.createAlbumAsync("TRACKER", id);
-        await AsyncStorage.setItem('album', new_album.id.toString());
-        await MediaLibrary.addAssetsToAlbumAsync([id], new_album.id.toString());
-        await db.runAsync(`INSERT INTO paths (name,idpath, begintime, endtime, images, path) VALUES (?,?,?,?,?,?)`,[pathData.name, id, pathData.start,Date.now(),0,path]);
-      } else {
-        await MediaLibrary.addAssetsToAlbumAsync([id], album);
-        await db.runAsync(`INSERT INTO paths (name, idpath, begintime, endtime, images, path) VALUES (?,?,?,?,?,?)`,[pathData.name, id, pathData.start,Date.now(),0,path]);
-      }
-      DeletePath();
-    } catch (e) {
-      console.log(e);
-    }
-  };
-  const TypeMap = () => {
+  const setTypeMap = () => {
     settypeMap(typeMap === 'satellite' ? 'standard' : 'satellite')
   };
+  
   if (status === null) {
     requestPermission();
   }
   return (
-    <SafeAreaView style={[styles.main_block,{ flex: 1, backgroundColor: '#fff' }]}>
-      {/* <View style={styles.main_block}> */}
-        <View style={styles.distance}>
-          <Text style={styles.distance_text}>to back{'\n'}{distance} m</Text>
-          <Text style={[styles.distance_text, styles.path]}>path{'\n'}{path} m</Text>
-          <Text style={styles.distance_text}>time{'\n'} {PathTime(pathData.start).toFixed(1)} min</Text>
-        </View>
-        {nodes.length > 0 ? (
-          <MapView
-            ref={ref}           
-            zoomEnabled={false}
-            mapType={typeMap}
-            style={[styles.map, { height: height - 248 }]}
-            region={{
-              latitude: nodes[0].latitude,
-              longitude: nodes[0].longitude,
-              latitudeDelta: 0.02,
-              longitudeDelta: 0.02,
-            }}
-          >
-            <Polyline
-              coordinates={nodes}
-              strokeColor="#3d4eea"
-              strokeWidth={3}
-            />
-            {nodes.map((i, index) => index === 2 ?
-              <Marker  key={index}
-                coordinate={{
-                  latitude: i.latitude,
-                  longitude: i.longitude
-                }}
-                calloutOffset={{ x: 15, y: 15 }}
-                image={require('../../assets/images/camera.png')}
+    <SafeAreaView style={styles.main_block}>      
+        {name.length > 0 ?
+          <>
+            {movie === 'running' ? null: <View style={styles.distance}>
+              <Text style={styles.distance_text}>To back{'\n'}{distance} m</Text>
+              <Text style={[styles.distance_text, styles.path]}>Path{'\n'}{path} m</Text>
+              <Text style={styles.distance_text}>Time{'\n'} {SecundsToTime((Date.now() - timeRef.current)/1000)} </Text>
+            </View>}
+            <MapView
+              ref={refzoom}
+              zoomEnabled={false}
+              mapType={typeMap}
+              showsUserLocation={startStop}
+             
+              onUserLocationChange={(e) => GetLocations(e.nativeEvent)}
+            
+              userLocationFastestInterval={time*60000}
+              style={[styles.map, { height: height - 248 }]}
+              onPress={()=>setHeightBlock(height - 45)}
+              region={{
+                latitude: nodes[0]?.latitude,
+                longitude: nodes[0]?.longitude,
+                latitudeDelta: 0.02,
+                longitudeDelta: 0.02,
+              }}
+            >
+              <Polyline
+                coordinates={nodes}
+                strokeColor="#3d4eea"
+                strokeWidth={3}
+                
               />
-              :
-              <Circle key={index}
-                center={{
-                  latitude: i.latitude,
-                  longitude: i.longitude
-                }}
-                radius={index === 0 ? 45 : (index === nodes.length - 1) ? 45 : 40}
-                fillColor={index === 0 ? 'red' : (index === nodes.length - 1) ? '#fff' : 'gold'}
-                strokeColor='blue'
-                strokeWidth={6}
+              {nodes.map((i, index) => i.type === 'photo' ?
+                <Marker key={index}
+                  coordinate={{
+                    latitude: i.latitude,
+                    longitude: i.longitude
+                  }}
+                  calloutOffset={{ x: -15, y: -15 }}
+                  image={require('../../assets/images/camera.png')}
+                />
+                :
+                <Circle key={index}
+                  center={{
+                    latitude: i.latitude,
+                    longitude: i.longitude
+                  }}
+                  radius={index === 0 ? 30 * 10 / zoom : (index === nodes.length - 1) ? 30 * 10 / zoom : 30 * 10 / zoom}
+                  fillColor={index === 0 ? 'red' : (index === nodes.length - 1) ? '#fff' : 'gold'}
+                  strokeColor='yellow'
+                  strokeWidth={4}
+                />
+              )}
+
+            </MapView>
+            <View style={styles.btnContainer}>
+              <FontAwesome name="search-minus" onPress={ZoomDown} size={40} color="#000" />
+              <Ionicons
+                onPress={setTypeMap}
+                name={typeMap === 'standard' ? "earth-outline" : "earth-sharp"}
+                size={50}
+                color='#000'
               />
-            )}
-          </MapView>) : (
-          <View style={[styles.inputBlock, { height: height }]}>
-            <Text style={{fontSize: 19}}> Введите название маршрута</Text>
-            <TextInput
-              style={styles.input}
-              onChangeText={(text)=>onChangePathData(prev=>({...prev,...{name: text}}))}
-              value={pathData.name}
-              focusable
-              autoCapitalize='sentences'
-              placeholder="Введите название маршрута"              
-            />
-             <TouchableHighlight disabled={pathData.name.length < 5} style={[styles.btnZoom,{width: '70%'}]} onPress={StartPath}>
-            <Text style={styles.btnText}>Start</Text>
-          </TouchableHighlight>
-          </View>
-        )
-        }
-        <View style={styles.btnContainer}>
-          <TouchableHighlight style={styles.btnZoom} onPress={ZoomDown}>
-            <Text style={styles.btnText}>ZOOM -</Text>
-          </TouchableHighlight>
-          <LinearGradient style={styles.button_map_grad} colors={['#4c669f', '#3b5998', '#192f6a']}>
-            <Ionicons
-              onPress={TypeMap}
-              name={typeMap === 'standard' ? "earth-outline" : "earth-sharp"}
-              size={30}
-              color='#fff'
-            />
-          </LinearGradient>
-          <LinearGradient colors={['#4c669f', '#3b5998', '#192f6a']} style={styles.btnZoom} >
-            <Text onPress={ZoomUp} style={styles.btnText}>ZOOM +</Text>
-          </LinearGradient>
-        </View>
-        <View style={styles.btnContainer}>
+              <FontAwesome name="search-plus" onPress={ZoomUp} size={40} color="#000" />
+            </View>
+      
+            {movie === 'running' ? 
+            <RunBlock 
+              height = {heightBlock}
+              setheight = {setHeightBlock}
+              distance={distance}
+              time={(Date.now() - timeRef.current)/1000}
+              speed={speed}
+            /> 
+            : 
+            null}
+        
+
+        <View style={[styles.btnContainer, styles.startstop, { gap: 10 }]}>
           {startStop ? (
             <TouchableHighlight
               style={[styles.btnStop, { width: '100%' }]}
-              onPress={handlePause}
+              onPress={()=>setStartStop(false)}
             >
               <Text style={[styles.btnText, { backgroundColor: 'purple' }]}>
-                stop
+                Stop write path
               </Text>
             </TouchableHighlight>) : (<>
               <TouchableHighlight
@@ -315,7 +287,7 @@ const Map = () => {
                 onPress={Save}
               >
                 <Text style={[styles.btnText, { backgroundColor: 'maroon' }]}>
-                  save
+                  Save
                 </Text>
               </TouchableHighlight>
               <TouchableHighlight
@@ -324,29 +296,41 @@ const Map = () => {
               >
                 <Ionicons
                   name="trash"
+
                   size={30}
                   color='#fff'
                 />
               </TouchableHighlight>
               <TouchableHighlight
                 style={styles.btnStop}
-                onPress={handleStart}
+                onPress={()=>setStartStop(true)}
               >
                 <Text style={[styles.btnText, { backgroundColor: 'green' }]}>
-                  continue
+                  Continue
                 </Text>
               </TouchableHighlight>
             </>)
           }
         </View>
-      {/* </View> */}
-
+      </>
+        :
+        <Enter typemove={movie} />
+      }
     </SafeAreaView>
   );
 };
 const styles = StyleSheet.create({
   main_block: {
-    paddingBottom: 10
+    backgroundColor: '#fff',
+    flex: 1,
+  },
+  runningBlock: {
+    position: 'absolute',
+    top: StatusBar.currentHeight,
+    backgroundColor: '#fff',
+    flex: 1,
+    height: height - 25,
+    width: '100%'
   },
   distance: {
     flexDirection: 'row',
@@ -354,30 +338,60 @@ const styles = StyleSheet.create({
   },
   distance_text: {
     fontSize: 20,
-    width: '30%',
+    width: '33%',
     textAlign: 'center',
     height: 50,
     paddingHorizontal: 5,
 
   },
-  input: {
+  btnZoom: {
+    width: '38%',
     height: 50,
-    width: '70%',
+    backgroundColor: '#ddd',
+    borderRadius: 28,
+  },
+  btnMap: {
+    width: '20%',
+    height: 50,
+    borderRadius: 28,
+  },
+  button_map_grad: {
+    width: '22%',
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    borderColor: 'blue',
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    fontSize: 18
+    borderRadius: 28,
+    lineHeight: 50
   },
-  path: {
-    backgroundColor: "#ddd"
+  btnText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    backgroundColor: 'blue',
+    lineHeight: 50,
+    color: '#fff',
+    borderRadius: 28,
+  },
+  btnContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    gap: 30,
+    alignItems: 'center'
+
+  },
+  startstop: {
+    position: 'absolute',
+    bottom: 10
   },
   map: {
     width: '100%',
     marginBottom: 8
   },
+  path: {
+    backgroundColor: "#ddd"
+  },
+
   inputBlock: {
     width: '100%',
     justifyContent: 'center',
@@ -393,26 +407,7 @@ const styles = StyleSheet.create({
     width: '98%',
     marginHorizontal: 'auto'
   },
-  btnZoom: {
-    width: '38%',
-    height: 50,
-    backgroundColor: '#ddd',
-    borderRadius: 8,
-  },
-  btnMap: {
-    width: '20%',
-    height: 50,
-    borderRadius: 8,
 
-  },
-  button_map_grad: {
-    width: '22%',
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    lineHeight: 50
-  },
   btnText: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -420,7 +415,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'blue',
     lineHeight: 50,
     color: '#fff',
-    borderRadius: 8,
+    borderRadius: 28,
   },
   button_map_text: {
     fontSize: 20,
@@ -433,15 +428,10 @@ const styles = StyleSheet.create({
     height: 50,
     marginTop: 8,
     width: '32%',
-
     marginHorizontal: 'auto',
-    borderRadius: 8,
+    borderRadius: 28,
 
   },
-  btnContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8
-  }
+
 });
 export default Map;

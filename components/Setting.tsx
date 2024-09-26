@@ -1,50 +1,80 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
-import { Text, View, StyleSheet, TextInput, Button } from "react-native";
+import { Text, View, StyleSheet, Switch } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Colors } from "@/constants/Colors";
+import { useDispatch, UseDispatch } from "react-redux";
+import { settime } from "@/reduser"; 
 
-const Setting = ({settingView}) => {
-    const [time, timeSet] = useState<number>(1);
-    useEffect(()=>{
-       async function ReadStorage() {
-        try {
-            const value = await AsyncStorage.getItem('time');          
-            timeSet(Number(value));           
-          } catch (e) {           
-          }
+const color = Colors.light.background;
+
+const Setting = ({ settingView }) => {
+    const [time, timeSet] = useState<number>(0.5);
+    const [weight, weightSet] = useState(70);
+    const [isEnabled, setIsEnabled] = useState(false);
+    const dispatch = useDispatch();
+    const toggleSwitch = () => setIsEnabled(previousState => !previousState);
+    useEffect(() => {
+        async function ReadStorage() {
+            const time = await AsyncStorage.getItem('time');
+            const weight = await AsyncStorage.getItem("weight");
+            timeSet(Number(time));
+            weightSet(Number(weight));
         };
         ReadStorage();
-    },[])
-    const storeData = async() => {
+    }, [])
+    const storeData = async () => {
         try {
-          await AsyncStorage.setItem('time', time.toString());
-          settingView(false)  
+            await AsyncStorage.multiSet([['weight', weight.toString()], ['time', time.toString()]]);
+            const t = await AsyncStorage.getItem('time');
+            dispatch(settime(time));
+            settingView(false)
         } catch (e) {
-          // saving error
+            // saving error
         }
     };
     return (
-        <View style={styles.main}>
-            <View>
-                <Text style={styles.mainText}>Setting</Text>
+        <View style={styles.main}>           
+                <Text style={styles.mainText}>Settings</Text>
                 <View style={styles.timeBlock}>
                     <Text style={styles.timeText} >Time step (min)</Text>
-                    <View style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'center'}}>
-                    <LinearGradient style={styles.plusBtn} colors={['#4c669f', '#3b5998', '#192f6a']}>
-                        <Ionicons onPress={()=>timeSet(time === 1 ? 1 : time - 1)}  name="remove-sharp" size={35} color="#fff" />
-                    </LinearGradient>
-                    <Text  style={styles.timeText}>{time}</Text>
-                    <LinearGradient style={styles.plusBtn} colors={['#4c669f', '#3b5998', '#192f6a']}>
-                        <Ionicons onPress={()=>timeSet(time + 1)} name="add" size={35} color="#fff" />
-                    </LinearGradient>
+                    <View style={{ alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
+                        <LinearGradient style={styles.plusBtn} colors={color}>
+                            <Ionicons onPress={() => timeSet(time === 0.5 ? 0.5 : time - 0.5)} name="remove-sharp" size={35} color="#fff" />
+                        </LinearGradient>
+                        <Text style={[styles.timeText, { width: 40 }]}>{time}</Text>
+                        <LinearGradient style={styles.plusBtn} colors={color}>
+                            <Ionicons onPress={() => timeSet(time + 0.5)} name="add" size={35} color="#fff" />
+                        </LinearGradient>
                     </View>
                 </View>
-            </View>
-            <LinearGradient  style={styles.saveBtn} colors={['#4c669f', '#3b5998', '#192f6a']}>
-                <Ionicons onPress={storeData} name="save" size={35} color="#fff" />
-            </LinearGradient>
-
+                <View style={styles.timeBlock}>
+                    <Text style={styles.timeText} >Weight (kg)</Text>
+                    <View style={{ alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
+                        <LinearGradient style={styles.plusBtn} colors={color}>
+                            <Ionicons onPress={() => weightSet(weight === 20 ? 20 : weight - 1)} name="remove-sharp" size={35} color="#fff" />
+                        </LinearGradient>
+                        <Text style={[styles.timeText, { width: 40 }]}>{weight}</Text>
+                        <LinearGradient style={styles.plusBtn} colors={color}>
+                            <Ionicons onPress={() => weightSet(weight + 1)} name="add" size={35} color="#fff" />
+                        </LinearGradient>
+                    </View>
+                </View>
+                <View style={styles.timeBlock}>
+                <Text style={styles.timeText} >Have fintess braslet ?</Text>
+                    <Switch
+                        trackColor={{ false: '#767577', true: '#4c669f' }}
+                        thumbColor={isEnabled ? '#192f6a' : '#f4f3f4'}
+                        ios_backgroundColor="#3e3e3e"
+                        onValueChange={toggleSwitch}
+                        style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }}
+                        value={isEnabled}
+                    />
+                </View>           
+            {/* <LinearGradient  style={styles.saveBtn} colors={color}> */}
+            <Ionicons style={styles.saveBtn} onPress={storeData} name="save" size={45} color="violet" />
+            {/* </LinearGradient> */}
         </View>
     )
 };
@@ -55,44 +85,46 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 500,
         backgroundColor: '#fff',
-        borderRadius: 8,
-        marginTop: 8,
+        borderRadius: 28,
         padding: 10,
-        justifyContent: 'space-between'
+        alignItems: "center",
+        gap: 10       
     },
     mainText: {
         textAlign: 'center',
         fontSize: 22,
+       
         fontWeight: 'bold'
     },
     timeBlock: {
-       
-        alignContent: 'center',
-        marginTop: 10,
+        alignContent: 'center',       
         width: '100%',
         alignItems: 'center'
     },
     timeText: {
         fontSize: 22,
         marginHorizontal: 20,
-        fontWeight: 'bold',
-        color: 'violet'
+        marginVertical: 5,       
+        color: 'violet',
+        textAlign: 'center'
     },
     minus: {
         color: '#fff',
         fontSize: 30
     },
     saveBtn: {
-        height: 50,
-        borderRadius: 8,
+        height: 52,
+        borderRadius: 28,
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        position: 'absolute',
+        bottom: 10
     },
     plusBtn: {
         height: 50,
         borderRadius: 50,
         alignItems: 'center',
-        width: 50,
+        width: 100,
         justifyContent: 'center'
     }
 });

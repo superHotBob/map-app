@@ -1,8 +1,9 @@
-import { View, Image, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, ImageBackground, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, ImageBackground, Pressable } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as MediaLibrary from 'expo-media-library';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+
 
 import {
     Directions,
@@ -26,81 +27,83 @@ const Carusel = () => {
     const scale = useSharedValue(1);
     const startScale = useSharedValue(0);
     const [result, setResult] = useState(false);
-    const [assets, setAssets] = useState<Array<{id: string, uri: string}>>([]);
+    const [assets, setAssets] = useState<Array<{ id: string, uri: string }>>([]);
     const [idimage, setIdImage] = useState(false)
 
+
     const { date = Date.now(), } = useLocalSearchParams();
-    const path_date = (new Date(+date)).toLocaleString('ru-RU',
+    const path_date = (i) => (new Date(+i)).toLocaleString('ru-RU',
         { dateStyle: 'short', timeStyle: 'short', timeZone: "Europe/Minsk" }
     );
-   
-    const { before, after } = useLocalSearchParams();
+
+
+    const { start, end } = useLocalSearchParams();
+
     useEffect(() => {
-         
-    console.log(Number(before) - Number(after))
+
         async function GetAssets() {
-            const { id } = await MediaLibrary.getAlbumAsync("album_photo");           
-            const my_assets = await MediaLibrary.getAssetsAsync({ album: id });
-            setAssets([...my_assets.assets]);
-            console.log(my_assets.assets)
+
+            const { id } = await MediaLibrary.getAlbumAsync("album_photo");
+            const { assets } = await MediaLibrary.getAssetsAsync({ album: id });
+            // console.log(assets.map(i=>path_date(i.modificationTime)))
+
+            const new_assets = assets.filter(i => i.modificationTime > +start && i.modificationTime < +end )
+            setAssets([...new_assets]);
+            
         }
         GetAssets();
     }, [])
-    async function Delete() {       
+    async function Delete() {
         const result = await MediaLibrary.deleteAssetsAsync([idimage]);
         setResult(result);
     };
-    function GetId(id) {
-        console.log(id)
+    function GetId(id) {        
         setIdImage(id)
     };
-    
+
     return (
-        <ScrollView>
-            <View style={styles.mainBlock}>
-                <Text style={styles.data}>
-                    {path_date}
-                </Text>
-                <ScrollView horizontal={true} onScrollBeginDrag={() => setIdImage(null)}>
-                    <View style={styles.imagesBlock}>
-                        {assets.map(i =>
-                            <Pressable
-                                key={i.id}
-                                onPress={() => console.log('gdfg')}
-                                style={[styles.image, { width: width, opacity: result ? 0.3 : 1 }]}
+        <View style={styles.mainBlock}>
+            <Text style={styles.data}>{path_date(date)}</Text>
+            <ScrollView horizontal={true} onScrollBeginDrag={() => setIdImage(null)}>
+                <View style={styles.imagesBlock}>
+                    {assets.map(i =>
+                        <Pressable
+                            key={i.id}
+                            onPress={() => GetId(i.id)}
+                            style={[styles.image, { opacity: result ? 0.3 : 1 }]}
+                        >
+                            <ImageBackground
+                                style={[styles.image, { width: +width, height: width * (i.height / i.width), opacity: result ? 0.3 : 1 }]}
+                                source={{ uri: i.uri }}
+                                resizeMode='cover'
                             >
-                                <ImageBackground
-                                    style={[styles.image, { width: +width, height: +height, opacity: result ? 0.3 : 1 }]}
-                                    source={{ uri: i.uri }}
-                                    resizeMode='cover'
-                                >
-                                    <Text></Text>
-                                </ImageBackground>
-                            </Pressable>
-                        )}
-                    </View>
-                </ScrollView>
-                {idimage ? <LinearGradient
-                    style={styles.btnDelete}
-                    colors={['#4c669f', '#3b5998', '#192f6a']}
-                >
-                    <TouchableOpacity style={styles.btnDelete} disabled={result} onPress={Delete}>
-                        <Text style={styles.delete_text}>
-                            {result ? 'УДАЛЕНО' : 'УДАЛИТЬ'}
-                        </Text>
-                    </TouchableOpacity>
-                </LinearGradient> : null}
-            </View>
-        </ScrollView>
+                                <Text></Text>
+                            </ImageBackground>
+                        </Pressable>
+                    )}
+                </View>
+            </ScrollView>
+            {idimage ? <LinearGradient
+                style={styles.btnDelete}
+                colors={['#4c669f', '#3b5998', '#192f6a']}
+            >
+                <TouchableOpacity style={styles.btnDelete} disabled={result} onPress={Delete}>
+                    <Text style={styles.delete_text}>
+                        {result ? 'DELETED' : 'DELETE'}
+                    </Text>
+                </TouchableOpacity>
+            </LinearGradient> : null}
+        </View>
+
     );
 }
 const styles = StyleSheet.create({
     mainBlock: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'space-between',
         backgroundColor: '#fff',
-        gap: 15,
+       
         width: '100%',
 
     },
@@ -122,18 +125,22 @@ const styles = StyleSheet.create({
     btnDelete: {
         width: '98%',
         borderRadius: 8,
-        height: 50
+        height: 50,
+        position: 'absolute',
+        bottom: 10
     },
     delete_text: {
         textAlign: 'center',
         fontSize: 18,
         color: '#fff',
         lineHeight: 50,
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        bottom: -10
     },
     imagesBlock: {
         flexDirection: 'row',
         flexWrap: 'nowrap',
+        alignItems: 'center',
         gap: 8,
         height: height - 220
     }
