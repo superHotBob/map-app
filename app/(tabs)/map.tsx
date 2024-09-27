@@ -64,13 +64,12 @@ const Map = () => {
     //   return;
     // };
     setCurrentTime(i.coordinate.timestamp);
-    console.log(nodes)
+    console.log(nodes, time,movie, i.coordinate)
     
-    if (movie === 'running') {
-      
+    if (movie === 'running') {      
       const point = {
         longitude: nodes.length === 0 ? i.coordinate.longitude  : 
-        nodes[nodes.length - 1].longitude + Math.random() / 50,
+        nodes[nodes.length - 1].longitude + Math.random()/50,
         latitude:   i.coordinate.latitude, 
         type: movie
       };
@@ -123,10 +122,10 @@ const Map = () => {
         const new_album = await MediaLibrary.createAlbumAsync("TRACKER", id);
         await AsyncStorage.setItem('album', new_album.id.toString());
         await MediaLibrary.addAssetsToAlbumAsync([id], new_album.id.toString(), false);
-        await db.runAsync(`INSERT INTO paths (name, idpath, begintime, endtime, images, path) VALUES (?,?,?,?,?,?)`, [name, id, timeRef.current, Date.now(), photo_count, path]);
+        await db.runAsync(`INSERT INTO paths (name, idpath, begintime, endtime, images, path, type) VALUES (?,?,?,?,?,?,?)`, [name, id, timeRef.current, Date.now(), photo_count, path, movie]);
       } else {
         await MediaLibrary.addAssetsToAlbumAsync([id], album, false);
-        await db.runAsync(`INSERT INTO paths (name, idpath, begintime, endtime, images, path) VALUES (?,?,?,?,?,?)`, [name, id, timeRef.current , Date.now(), photo_count, path]);
+        await db.runAsync(`INSERT INTO paths (name, idpath, begintime, endtime, images, path, type) VALUES (?,?,?,?,?,?,?)`, [name, id, timeRef.current , Date.now(), photo_count, path, movie]);
       }
       dispatch(deletepoint([]));
       dispatch(setname(''));
@@ -214,8 +213,8 @@ const Map = () => {
               style={[styles.map, { height: height - 248 }]}
               onPress={()=>setHeightBlock(height - 45)}
               region={{
-                latitude: nodes[0]?.latitude,
-                longitude: nodes[0]?.longitude,
+                latitude: 53.957598, 
+                longitude: 27.625336,
                 latitudeDelta: 0.02,
                 longitudeDelta: 0.02,
               }}
@@ -241,7 +240,7 @@ const Map = () => {
                     latitude: i.latitude,
                     longitude: i.longitude
                   }}
-                  radius={index === 0 ? 30 * 10 / zoom : (index === nodes.length - 1) ? 30 * 10 / zoom : 30 * 10 / zoom}
+                  radius={index === 0 ? (30 * 2.5) / zoom : (index === nodes.length - 1) ? (30 * 2.5) / zoom : (30 * 2.5) / zoom}
                   fillColor={index === 0 ? 'red' : (index === nodes.length - 1) ? '#fff' : 'gold'}
                   strokeColor='yellow'
                   strokeWidth={4}

@@ -11,7 +11,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import Setting from '@/components/Setting';
 import Statistic from '@/components/Statistic';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SQLite from 'expo-sqlite';
 import { Colors } from '@/constants/Colors';
 import Patch from '@/components/Paths';
@@ -21,22 +20,27 @@ import * as MediaLibrary from 'expo-media-library';
 const color = Colors.light.background;
 
 
+
 const HomeScreen = () => {
   const [setting, settingView] = useState(false);
   const [statistic, viewStatistic] = useState(false);
   const router = useRouter();
-  const dispatch = useDispatch();
-  
+  const dispatch = useDispatch();  
 
   useFocusEffect(useCallback(()=>{StatusBar.setBarStyle('light-content')},[]))
   useEffect(() => {    
     async function ViewStorage() {
-      const time = await AsyncStorage.getItem('time');
-      const albums = await MediaLibrary.getAlbumsAsync();
-      console.log(albums);
       const db = await SQLite.openDatabaseAsync('tracker', {
         useNewConnection: true
       });
+      // const type = await db.execAsync('ALTER TABLE paths ADD COLUMN type TEXT')
+     
+    
+      // const allRows = await db.getAllAsync('SELECT * FROM paths');
+      // console.log(allRows);
+      const time = await AsyncStorage.getItem('time');
+      const albums = await MediaLibrary.getAlbumsAsync();     
+     
       // await db.execAsync(`alter table paths add column images integer default 0`);    
       //await db.execAsync(`update paths set images = 1  where id = 13`);
       // const allRows = await db.getAllAsync('SELECT * FROM paths'); 
@@ -62,8 +66,8 @@ const HomeScreen = () => {
           settingView(true);
         } catch (error) { console.log(error) }
       };
-      // await db.execAsync('ALTER TABLE paths ADD COLUMN idpath INTEGER')
-
+      // const type = await db.execAsync('ALTER TABLE paths ADD COLUMN type TEXT')
+     
       // CreateDB();
       // const name = 'gfgdfgd'
       // const del = await db.runAsync(`DELETE FROM paths WHERE name = ?`,[name]); 
@@ -71,7 +75,7 @@ const HomeScreen = () => {
       // await db.execAsync('drop table paths');
       // await db.runAsync('INSERT INTO paths (name, idpath, begintime,endtime,path,images) VALUES (?, 10, 1725202074000,1725212474000,1500,3)',['ррррр']);
       // const allRows = await db.getAllAsync('SELECT * FROM paths');
-
+      // console.log(allRows);
 
     }
     ViewStorage();

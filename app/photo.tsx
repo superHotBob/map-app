@@ -4,7 +4,6 @@ import * as MediaLibrary from 'expo-media-library';
 import { useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 
-
 import {
     Directions,
     Gesture,
@@ -28,7 +27,7 @@ const Carusel = () => {
     const startScale = useSharedValue(0);
     const [result, setResult] = useState(false);
     const [assets, setAssets] = useState<Array<{ id: string, uri: string }>>([]);
-    const [idimage, setIdImage] = useState(false)
+    const [idImage, setIdImage] = useState(false)
 
 
     const { date = Date.now(), } = useLocalSearchParams();
@@ -54,7 +53,7 @@ const Carusel = () => {
         GetAssets();
     }, [])
     async function Delete() {
-        const result = await MediaLibrary.deleteAssetsAsync([idimage]);
+        const result = await MediaLibrary.deleteAssetsAsync([idImage]);
         setResult(result);
     };
     function GetId(id) {        
@@ -83,7 +82,7 @@ const Carusel = () => {
                     )}
                 </View>
             </ScrollView>
-            {idimage ? <LinearGradient
+            {idImage ? <LinearGradient
                 style={styles.btnDelete}
                 colors={['#4c669f', '#3b5998', '#192f6a']}
             >

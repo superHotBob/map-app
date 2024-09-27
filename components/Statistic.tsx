@@ -29,8 +29,8 @@ function Statistic() {
             const db = await SQLite.openDatabaseAsync('tracker', {
                 useNewConnection: true
             });
-            const paths = await db.getAllAsync(`SELECT * FROM paths ORDER BY 'modificationTime' DESC`);
-
+            const paths = await db.getAllAsync(`SELECT *  FROM paths ORDER BY 'modificationTime' DESC`);
+            
             setPath(paths);
         };
         GetPaths();
@@ -38,6 +38,7 @@ function Statistic() {
     type Image = {
         begintime: number,
         endtime: number,
+        type: string
     }
     function ViewImage(i: Image) {
         router.push({
@@ -45,6 +46,7 @@ function Statistic() {
             params: {
                 start: i.begintime,
                 end: i.endtime,
+                type: i.type
             }
         })
     }
@@ -52,10 +54,10 @@ function Statistic() {
 
     const Item = ({ i, index }) => (
         <Pressable key={i.endtime} onPress={() => ViewImage(i)} style={[styles.pathBlock, { backgroundColor: index % 2 ? '#fff' : '#ddd' }]}>
-            <Text style={[styles.text, { paddingHorizontal: 2 }]}>{i.name}</Text>
+            <Text style={[styles.text, { paddingHorizontal: 2, width: '30%' }]}>{i.name}</Text>
             <Text style={styles.text}>{Path_date(i.begintime)}</Text>
-            <Text style={styles.text}>{Time_path(i.begintime, i.endtime)}</Text>
-            <Text style={styles.text}>{i.path} m</Text>
+            <Text style={styles.text}>{i.type ? i.type : 'walking'}</Text>
+
             <Text style={styles.text}>{i.images}</Text>
         </Pressable>
     );
@@ -65,8 +67,8 @@ function Statistic() {
         <View style={styles.mainBlock}>
             <Text style={styles.headerText}>Statistics</Text>
             <View style={styles.pathBlock}>
-                {['Name', 'Date', 'Time', 'Path', 'Photo'].
-                    map(i => <Text key={i} style={styles.date}>{i}</Text>)}
+                {['Name', 'Date', 'Type', 'Photo'].
+                    map(i => <Text key={i} style={[styles.date,{width: i=== 'Name'? '30%': '23%'}]}>{i}</Text>)}
             </View>
             <FlatList
                
@@ -99,14 +101,15 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between'
     },
     date: {
-        width: '20%',
+        width: '25%',
         fontWeight: 'bold',
         textAlign: 'center',
         fontSize: 17,
         color: 'blue'
     },
+    
     text: {
-        width: '20%',
+        width: '23%',
         textAlign: 'center'
     }
 })
