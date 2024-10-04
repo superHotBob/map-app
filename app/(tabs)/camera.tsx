@@ -23,7 +23,7 @@ function Camera() {
     const nodes = useSelector((state) => state.track.nodes)
     const dispatch = useDispatch();
     StatusBar.setBarStyle('dark-content');
-
+    console.log('camera block');
     if (!permission) {
         // Camera permissions are still loading.
         return <View />;
@@ -66,6 +66,7 @@ function Camera() {
 
     return (
         <View style={styles.container}>
+            <StatusBar barStyle='light-content' backgroundColor="#000" />
             <View style={styles.zoomBox}>
                 <LinearGradient style={[styles.plusBtn, styles.ratio]} colors={background}>
                     <Text onPress={() => setRatio(ratio === '16:9' ? '1:1' : ratio === '1:1' ? '4:3' : '16:9')} style={styles.ratioText}>{ratio}</Text>
@@ -93,8 +94,8 @@ function Camera() {
                 facing={facing}
                 enableTorch={true}
             />
-            <View style={[styles.functions, ratio === '16:9' ? styles.six : null]}>               
-                <LinearGradient style={[styles.plusBtn, styles.photo]} colors={background}>
+            <View style={styles.six}>               
+                <LinearGradient style={[styles.plusBtn,styles.photo]} colors={background}>
                     <Ionicons disabled={nodes.length === 0} onPress={takePicture} name="camera" size={40} color="#fff" />
                 </LinearGradient>               
             </View>
@@ -105,9 +106,10 @@ export default Camera;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start',
         paddingBottom: 20,
-        marginTop: StatusBar.currentHeight,
+        marginTop: StatusBar.currentHeight
+        
     },
     message: {
         textAlign: 'center',
@@ -116,13 +118,13 @@ const styles = StyleSheet.create({
     zoomBox: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: StatusBar.currentHeight,
+        marginVertical: 20,
         alignItems: 'center',
         gap: 8
     },
     camera: {
         width: '100%',
-        marginTop: 10
+       
     },
     plusBtn: {
         height: 50,
@@ -134,6 +136,11 @@ const styles = StyleSheet.create({
     photo: {
         width: 80,
         height: 80,
+        justifyContent: 'center',
+        marginHorizontal: 'auto',
+        borderRadius: 50,
+        alignContent: 'center'
+        
     },
     flash: {
         width: 50,
@@ -143,7 +150,7 @@ const styles = StyleSheet.create({
         width: 50
     },
     ratioText: {
-        fontSize: 20,
+        fontSize: 18,
         color: '#fff'
     },
     text: {
@@ -162,6 +169,8 @@ const styles = StyleSheet.create({
     },
     six: {
         position: 'absolute',
-        bottom: 20
+        bottom: 20,
+        width: '100%'
+       
     }
 });

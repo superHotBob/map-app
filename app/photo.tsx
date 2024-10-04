@@ -1,22 +1,18 @@
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, ImageBackground, Pressable } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, ImageBackground, Pressable, StatusBar, Button } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as MediaLibrary from 'expo-media-library';
 import { useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as SQLite from 'expo-sqlite';
+import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
 
-import {
-    Directions,
-    Gesture,
-    GestureDetector,
-    GestureHandlerRootView,
-} from 'react-native-gesture-handler';
-
-import { Ionicons } from '@expo/vector-icons';
 import Animated, {
     withTiming,
     useSharedValue,
     useAnimatedStyle,
 } from 'react-native-reanimated';
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
+import { Duration } from '@/hooks/useDB';
 
 
 const { width, height } = Dimensions.get('window');
@@ -35,34 +31,73 @@ const Carusel = () => {
         { dateStyle: 'short', timeStyle: 'short', timeZone: "Europe/Minsk" }
     );
 
-
-    const { start, end } = useLocalSearchParams();
+    console.log('photo block');
+    const {type, start, end, name, id: id_path, path } = useLocalSearchParams();
 
     useEffect(() => {
-
+        StatusBar.setBarStyle('dark-content');
         async function GetAssets() {
+            const db = await SQLite.openDatabaseAsync('tracker', {
+                useNewConnection: true
+            });
+            const path = await db.getAllAsync(`SELECT * FROM paths where id = ${id_path}`);
 
             const { id } = await MediaLibrary.getAlbumAsync("album_photo");
             const { assets } = await MediaLibrary.getAssetsAsync({ album: id });
-            // console.log(assets.map(i=>path_date(i.modificationTime)))
 
-            const new_assets = assets.filter(i => i.modificationTime > +start && i.modificationTime < +end )
+            const new_assets = assets.filter(i => i.modificationTime > +start && i.modificationTime < +end)
             setAssets([...new_assets]);
-            
+
         }
         GetAssets();
-    }, [])
+    }, []);
+
+    async function DeletePath() {
+        const db = await SQLite.openDatabaseAsync('tracker', {
+            useNewConnection: true
+        });
+        await db.runAsync(`delete from paths where id = ${id_path}`);
+        const ids = assets.map(i=>i.id);
+        await MediaLibrary.deleteAssetsAsync(ids);
+        Toast.hide();
+    }; 
+   
     async function Delete() {
         const result = await MediaLibrary.deleteAssetsAsync([idImage]);
         setResult(result);
     };
-    function GetId(id) {        
+    function GetId(id:number) {
         setIdImage(id)
     };
-
+    const toastConfig = {
+        tomatoToast: ({ text1 }) => (
+            <View style={[styles.messages,{width: '98%',  backgroundColor: '#ccc' }]}>
+              <Text style={styles.messageText}>{text1}</Text>
+              <Button title="YES" onPress={DeletePath} />
+              <Button title="NO" onPress={()=>Toast.hide()} />
+            </View>
+        )
+    }
+    const showToast = () => {
+        Toast.show({
+          type: 'tomatoToast',
+          autoHide: false,
+          topOffset: 200,
+          text1: 'Do you want delete it path?',
+          
+        });
+      }
     return (
         <View style={styles.mainBlock}>
-            <Text style={styles.data}>{path_date(date)}</Text>
+            <View style={styles.header}>
+                <Ionicons onPress={()=>router.back()} name="arrow-back" color="blue" size={25} />
+                <Text style={styles.name}>{name}</Text>
+                <FontAwesome onPress={showToast} name="trash-o" color="blue" size={25} />
+            </View>           
+            <Text style={styles.data}>Type: {type}</Text>
+            <Text style={styles.data}>Date: {path_date(date)}</Text>
+            <Text style={styles.data}>Time: {Duration(start, end)} sec</Text>
+            <Text style={styles.data}>Distance: {path} m</Text>
             <ScrollView horizontal={true} onScrollBeginDrag={() => setIdImage(null)}>
                 <View style={styles.imagesBlock}>
                     {assets.map(i =>
@@ -76,19 +111,25 @@ const Carusel = () => {
                                 source={{ uri: i.uri }}
                                 resizeMode='cover'
                             >
-                                <Text></Text>
+                                <Text/>
                             </ImageBackground>
                         </Pressable>
                     )}
+                    <View style={{justifyContent: 'center', height: height/2, width: +width,backgroundColor: '#ddd'}}>
+                    <Text style={styles.noimage}>NO IMADE</Text>
+                    </View>
+                    
                 </View>
+
             </ScrollView>
+            <Toast config={toastConfig} />
             {idImage ? <LinearGradient
                 style={styles.btnDelete}
                 colors={['#4c669f', '#3b5998', '#192f6a']}
             >
                 <TouchableOpacity style={styles.btnDelete} disabled={result} onPress={Delete}>
                     <Text style={styles.delete_text}>
-                        {result ? 'DELETED' : 'DELETE'}
+                        {result ? 'PHOTO DELETED' : 'DELETE PHOTO'}
                     </Text>
                 </TouchableOpacity>
             </LinearGradient> : null}
@@ -102,9 +143,32 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: '#fff',
-       
         width: '100%',
-
+        marginTop: StatusBar.currentHeight
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        height: 60,
+        width: '100%',
+        borderBottomWidth: 1,
+        paddingHorizontal: 12,
+        borderColor: '#ddd'
+    },
+    name: {
+        fontSize: 25,
+        color: 'blue'
+    },
+    messages: {
+        padding: 15,
+        height: 150,
+        gap: 12,
+        borderRadius: 12
+    },
+    messageText: {
+        textAlign: 'center',
+        fontSize: 20
     },
     container: {
         flex: 1,
@@ -112,18 +176,22 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     image: {
-        borderRadius: 8,
+        borderRadius: 15,
         resizeMode: 'contain',
     },
+    noimage: {
+        width: '100%',
+        fontSize: 25,
+        textAlign: 'center'
+    },
     data: {
-        marginTop: 15,
-        fontSize: 18,
-        fontWeight: 'bold',
+        marginTop: 5,
+        fontSize: 22,        
         fontFamily: 'SpaceMono'
     },
     btnDelete: {
         width: '98%',
-        borderRadius: 8,
+        borderRadius: 29,
         height: 50,
         position: 'absolute',
         bottom: 10
@@ -141,7 +209,10 @@ const styles = StyleSheet.create({
         flexWrap: 'nowrap',
         alignItems: 'center',
         gap: 8,
-        height: height - 220
+        zIndex:1,
+       
+        borderWidth: 1,
+        borderColor: 'yellow'
     }
 })
 export default Carusel;

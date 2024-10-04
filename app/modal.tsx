@@ -16,6 +16,12 @@ const { width, height: myheight } = Dimensions.get('window');
 function clamp(val, min, max) {
     return Math.min(Math.max(val, min), max);
 }
+
+function Path_date(i:number) {    
+    return (new Date(+i)).toLocaleString('ru-RU',
+    { dateStyle: 'short', timeStyle: 'short', timeZone: "Europe/Minsk" }
+    );
+};    
 const Modal = () => {
     const [result, setResult] = useState(false);
     const scale = useSharedValue(1);
@@ -24,10 +30,8 @@ const Modal = () => {
     const translationY = useSharedValue(0);
     const prevTranslationX = useSharedValue(0);
     const prevTranslationY = useSharedValue(0);
-    const { filename, id, date = Date.now(), height, uri } = useLocalSearchParams();
-    const path_date = (new Date(+date)).toLocaleString('ru-RU',
-        { dateStyle: 'short', timeStyle: 'short', timeZone: "Europe/Minsk" }
-    );
+    const { filename, id, date , height, uri, item } = useLocalSearchParams();
+   
     const imagefilename = filename.split('_');    
 
     const animatedStyles = useAnimatedStyle(() => ({
@@ -36,7 +40,7 @@ const Modal = () => {
             { translateX: translationX.value },
             { translateY: translationY.value },
         ],
-    }));
+    }));   
     async function DeletePath() {
         const db = await SQLite.openDatabaseAsync('tracker', {
             useNewConnection: true
@@ -57,7 +61,6 @@ const Modal = () => {
                 },
                 { text: 'Да', onPress: () => DeletePath() },
             ]);
-
 
     const dragGesture = Gesture.Pan()
         .minDistance(1)
@@ -84,6 +87,7 @@ const Modal = () => {
             };
         })
         .runOnJS(true);
+        
     const singleTap = Gesture.Tap()
         .maxDuration(250)
         .onStart(() => {
@@ -133,7 +137,7 @@ const Modal = () => {
     return (
         <View style={styles.mainBlock}>
             <Text style={styles.data}>
-                {path_date} , {imagefilename[0]}
+                {Path_date(date)} , {imagefilename[0]}
             </Text>
             <View style={{ overflow: 'hidden', height: +height, width: width }}>
                 <GestureHandlerRootView >
@@ -180,7 +184,7 @@ const styles = StyleSheet.create({
     data: {
         fontSize: 18,
         fontWeight: 'bold',
-        lineHeight: 40,
+        lineHeight: 20,
         fontFamily: 'SpaceMono'
     },
     btnDelete: {

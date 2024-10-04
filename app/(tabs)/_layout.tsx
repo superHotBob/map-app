@@ -24,6 +24,7 @@ export default function TabLayout() {
           ),
         }}
       />
+       
       <Tabs.Screen
         name="map"
         options={{          
@@ -41,6 +42,16 @@ export default function TabLayout() {
           tabBarActiveBackgroundColor: '#ddd',
           tabBarIcon: ({ focused }) => (
             <TabBarIcon name={focused ? 'camera' : 'camera-outline'} color='#192f6a' />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="setting"       
+        options={{
+          tabBarShowLabel: false,
+          tabBarActiveBackgroundColor: '#ddd',         
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon name={focused ? 'settings' : 'settings-outline'} color='#192f6a' />
           ),
         }}
       />

@@ -5,7 +5,9 @@ const initialState = {
   nodes: [],
   name: '',
   movie: '',
-  time: 1
+  time: 1,
+  weight: 70,
+  braslet: false
 };
 
 export const pathSlice = createSlice({
@@ -14,9 +16,7 @@ export const pathSlice = createSlice({
   reducers: {
     // All the reducers go here
     addpoint: (state, action) => {      
-      
-        state.nodes = [...state.nodes, action.payload]
-      
+      state.nodes = [...state.nodes, action.payload]      
     },
     setname: (state, action) => {      
      state.name = action.payload;
@@ -24,17 +24,24 @@ export const pathSlice = createSlice({
     settime: (state, action) => {      
       state.time = action.payload;
      },
+     setweight: (state, action) => {      
+      state.weight = action.payload;
+     },
     setmovie: (state, action) => {      
       state.movie = action.payload;
      },
     deletepoint: (state, action) => {      
       state.nodes = [];
+      state.name = '';
     },
+    setbraslet: (state, action) => {
+      state.braslet = !state.braslet
+    }
   },
 });
 
 // Action creators are generated for each case reducer function
-export const {settime, addpoint, deletepoint, setname, setmovie } = pathSlice.actions;
+export const {setbraslet, setweight, settime, addpoint, deletepoint, setname, setmovie } = pathSlice.actions;
 
 // We export the reducer function so that it can be added to the store
 export default pathSlice.reducer;

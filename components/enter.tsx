@@ -4,9 +4,10 @@ import {
 } from "react-native";
 import { useFonts } from 'expo-font';
 import { useState } from "react";
-import { useDispatch } from "react-redux";
-import { setname, addpoint } from "@/reduser";
-
+import { useDispatch,useSelector } from "react-redux";
+import { setname, addpoint, settime } from "@/reduser";
+import * as Location from 'expo-location';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function Enter({typemove}:{typemove: string}) {
     const [name, setName] = useState('')
@@ -15,20 +16,23 @@ function Enter({typemove}:{typemove: string}) {
         'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),        
     });
     const StartPath = async () => {
-        // let { status } = await Location.requestForegroundPermissionsAsync();
-        // if (status !== 'granted') {
-        //     console.log('Permission to access location was denied');
-        //     return;
-        // };
-        // const data = await Location.getCurrentPositionAsync({});
-        // const point = {
-        //     longitude: data.coords.longitude + (0.01 - Math.random() / 50),
-        //     latitude: data.coords.latitude + (0.01 + Math.random() / 50),
-        //     type: typemove
-        // };
-        // dispatch(addpoint(point));
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            console.log('Permission to access location was denied');
+            return;
+        };
+        const data = await Location.getCurrentPositionAsync({});
+        const point = {
+            longitude: data.coords.longitude ,
+            latitude: data.coords.latitude ,
+            type: typemove
+        };
+        const time = await AsyncStorage.getItem('time');
+        dispatch(settime(time));
+        dispatch(addpoint(point));
         dispatch(setname(name));       
     };
+    
     return (
         <View style={styles.mainBlock}>
             <Text style={{fontFamily: 'SpaceMono', fontSize: 22 }}>Enter path name</Text>

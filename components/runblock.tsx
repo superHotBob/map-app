@@ -1,34 +1,42 @@
 import { StyleSheet, View, StatusBar, Text } from "react-native";
+import { SecondsToTime } from "@/hooks/useDB";
+import { useSelector } from "react-redux";
+import { useFonts } from 'expo-font';
 
-
-function RunBlock({setheight, height, distance, time, speed}) {
-
-    function SecundsToTime(i) {       
-        const hours = (i/3600).toFixed(0);       
-        const mins = Math.trunc((i - hours*3600)/60);
-        const sec = i - hours*3600 - mins*60;       
-        return ( hours + ' : ' + mins + ' : ' + sec.toFixed(0)); 
-    }
+function RunBlock({ setheight, height, distance, time, speed }) {
+    const [loaded, error] = useFonts({
+        'fredoka': require('../assets/fonts/Fredoka-Bold.ttf'),
+      });
+    const { weight, braslet } = useSelector(state => state.track);
     return (
-        <View style={[styles.mainblock, {height:height}]}>
-            <View style={[styles.blockitem,{height: height/2.6}]}>
+        <View style={[styles.mainblock, { height: height }]}>
+            <View style={[styles.blockitem, { height: height / 4.6 }]}>
                 <Text style={styles.textitem}>Speed</Text>
                 <Text style={styles.textitem}>{speed.toFixed(0)} km/h</Text>
             </View>
-            <View style={[styles.blockitem,{height: height/2.6}]}>
+            <View style={[styles.blockitem, { height: height / 4.6 }]}>
                 <Text style={styles.textitem}>Distance</Text>
                 <Text style={styles.textitem}>{distance} m</Text>
             </View>
-            <View style={[styles.blockitem,{height: height/2.6}]}>
-            <Text style={styles.textitem}>Time</Text>
-            <Text style={styles.textitem}>{SecundsToTime(time)}</Text>
+            <View style={[styles.blockitem, { height: height / 4.6 }]}>
+                <Text style={styles.textitem}>Time the run</Text>
+                <Text style={styles.textitem}>{SecondsToTime(time)}</Text>
             </View>
-            <View style={[styles.blockitem,{height: height/2.6}]}>
+            <View style={[styles.blockitem, { height: height / 4.6 }]}>
                 <Text style={styles.textitem}>Average</Text>
                 <Text style={styles.textitem}>speed</Text>
-                <Text style={styles.textitem}>{((distance/1000)/(time/3600)).toFixed(1)} km/h</Text>
+                <Text style={styles.textitem}>{((distance / 1000) / ((Date.now() - time) / 1000 / 3600)).toFixed(1)} km/h</Text>
             </View>
-            <Text onPress={()=>setheight(0)} style={styles.tomap}>To map</Text>
+            <View style={[styles.blockitem, {backgroundColor: 'red', height: height / 4.6 }]}>
+                <Text style={styles.textitem}>Calories</Text>
+                <Text style={styles.textitem}>burned</Text>
+                <Text style={styles.textitem}>{(weight * distance / 1000).toFixed(0)} ccal</Text>
+            </View>
+            <View style={[styles.blockitem, {backgroundColor: 'green', height: height / 4.6 }]}>
+                <Text style={styles.textitem}>Heart Rate</Text>
+                <Text style={styles.textitem}>{100}</Text>
+            </View>
+            <Text onPress={() => setheight(0)} style={styles.tomap}>VIEW MAP</Text>
         </View>
     )
 }
@@ -39,9 +47,9 @@ const styles = StyleSheet.create({
         position: 'absolute',
         flexDirection: 'row',
         flexWrap: 'wrap',
-        paddingHorizontal: 10,
-        gap: 12,
-        top: StatusBar.currentHeight,
+        padding: 10,
+        gap: 10,
+        top: 0,
         backgroundColor: '#fff',
         marginHorizontal: 'auto',
         justifyContent: 'space-around',
@@ -49,15 +57,16 @@ const styles = StyleSheet.create({
     },
     blockitem: {
         width: '48%',
-        
         backgroundColor: 'blue',
-        borderRadius: 10,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center'
     },
     textitem: {
-        fontSize: 30,
-        color: '#fff'
+        fontSize: 25,
+        color: '#fff',
+        fontFamily: 'fredoka',
+        fontWeight: 'bold'
     },
     tomap: {
         width: '98%',

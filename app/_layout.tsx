@@ -7,17 +7,18 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { Pressable, Alert } from 'react-native';
 import 'react-native-reanimated';
-
+import { useLocalSearchParams } from 'expo-router';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+// SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() { 
   const [loaded, error] = useFonts({
     'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-
+ 
   useEffect(() => {
+    
     if (loaded) {
       SplashScreen.hideAsync();
     }
@@ -29,8 +30,7 @@ export default function RootLayout() {
   const showAlert = () =>
     Alert.alert(
       'Помощь',
-      'Сам себе помоги',
-      
+      'Сам себе помоги',      
       [
         {
           text: 'Закрыть',          
@@ -44,6 +44,7 @@ export default function RootLayout() {
           
       },
     );
+    
   return (
     <Provider store={store}>
       <Stack>
@@ -55,13 +56,14 @@ export default function RootLayout() {
             headerTitleAlign: 'center', 
             title: 'Photos', 
             headerTitleStyle:{color: 'blue',fontWeight: 'bold', fontFamily: 'SpaceMono'},  
-            headerShown: true 
+            headerShown: false
           }} 
         />
         <Stack.Screen 
           name="modal"  
           options={{
             headerTintColor: 'blue', 
+            presentation: 'fullScreenModal',
             headerTitleAlign: 'center', 
             title: 'Path', 
             headerTitleStyle:{color: 'blue',fontWeight: 'bold', fontFamily: 'SpaceMono'},  
@@ -71,6 +73,7 @@ export default function RootLayout() {
               </Pressable>
           }} 
         />
+       
         <Stack.Screen name="+not-found" />
       </Stack>
     </Provider>

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Tracker",
+    "name": "tracker",
     "slug": "tracker",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -41,20 +41,20 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+          "locationAlwaysAndWhenInUsePermission": "Allow tracker to use your location."
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera"
+          "cameraPermission": "Allow tracker to access your camera"
         }
       ],
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
-          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
+          "photosPermission": "Allow tracker to access your photos.",
+          "savePhotosPermission": "Allow tracker to save photos.",
           "isAccessMediaLocationEnabled": true
         }
       ]

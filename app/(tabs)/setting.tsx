@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
-import { Text, View, StyleSheet, Switch } from "react-native";
+import { Text, View, StyleSheet, Switch, StatusBar } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Colors } from "@/constants/Colors";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,14 +9,14 @@ import { setbraslet, settime, setweight } from "@/reduser";
 import { useFonts } from "expo-font";
 const color = Colors.light.background;
 
-const Setting = ({ settingView }) => {
+const Setting = () => {
 
     const [isEnabled, setIsEnabled] = useState(false);
     const dispatch = useDispatch();
     const { time, weight, braslet } = useSelector(state => state.track);
     const toggleSwitch = () => dispatch(setbraslet(!braslet));
     const [loaded, error] = useFonts({
-        'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
+        'SpaceMono': require('../../assets/fonts/SpaceMono-Regular.ttf'),
     });
     useEffect(() => {
         async function ReadStorage() {
@@ -33,7 +33,7 @@ const Setting = ({ settingView }) => {
             await AsyncStorage.multiSet([['weight', weight.toString()], ['time', time.toString()]]);
             const t = await AsyncStorage.getItem('time');
             dispatch(settime(t));
-            settingView(false)
+           
         } catch (e) {
             // saving error
         }
@@ -86,11 +86,12 @@ export default Setting;
 const styles = StyleSheet.create({
     main: {
         width: '100%',
-        height: 500,
+        flex: 1,
         backgroundColor: '#ddd',
-        borderRadius: 28,
+        justifyContent: 'center',
         padding: 10,
         alignItems: "center",
+        marginTop: StatusBar.currentHeight,
         gap: 10
     },
     mainText: {
@@ -120,8 +121,7 @@ const styles = StyleSheet.create({
         borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
-        position: 'absolute',
-        bottom: 10
+        marginTop: 20
     },
     plusBtn: {
         height: 50,

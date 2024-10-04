@@ -7,9 +7,7 @@ import * as SQLite from 'expo-sqlite';
 const Path_date = (i: number) => new Date(i).toLocaleString('en-US',
     { dateStyle: 'short', year: '2-digit' });
 
-const Time_path = (a: number, b: number) => {
-    return ((b - a) / 1000 / 60).toFixed(2).replace('.', 'm ') + 'c';
-}
+
 const { height } = Dimensions.get('window');
 interface MyArray {
     name: string,
@@ -29,16 +27,19 @@ function Statistic() {
             const db = await SQLite.openDatabaseAsync('tracker', {
                 useNewConnection: true
             });
-            const paths = await db.getAllAsync(`SELECT *  FROM paths ORDER BY 'modificationTime' DESC`);
-            
+            const paths = await db.getAllAsync('SELECT * FROM paths ORDER BY begintime DESC');           
             setPath(paths);
+            
         };
         GetPaths();
     }, []);
     type Image = {
         begintime: number,
         endtime: number,
-        type: string
+        type: string,
+        name: string,
+        id: number,
+        path: number
     }
     function ViewImage(i: Image) {
         router.push({
@@ -46,7 +47,10 @@ function Statistic() {
             params: {
                 start: i.begintime,
                 end: i.endtime,
-                type: i.type
+                type: i.type,
+                name: i.name,
+                id: i.id,
+                path: i.path
             }
         })
     }
@@ -57,7 +61,6 @@ function Statistic() {
             <Text style={[styles.text, { paddingHorizontal: 2, width: '30%' }]}>{i.name}</Text>
             <Text style={styles.text}>{Path_date(i.begintime)}</Text>
             <Text style={styles.text}>{i.type ? i.type : 'walking'}</Text>
-
             <Text style={styles.text}>{i.images}</Text>
         </Pressable>
     );
@@ -70,8 +73,7 @@ function Statistic() {
                 {['Name', 'Date', 'Type', 'Photo'].
                     map(i => <Text key={i} style={[styles.date,{width: i=== 'Name'? '30%': '23%'}]}>{i}</Text>)}
             </View>
-            <FlatList
-               
+            <FlatList               
                 data={path}
                 keyExtractor={item => item.endtime}
                 renderItem={({ item, index }) => <Item i={item} index={index} />}

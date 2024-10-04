@@ -1,5 +1,5 @@
 import { StyleSheet, View, Dimensions, Alert, Text, TouchableHighlight, StatusBar } from 'react-native';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, Key } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapView, { Circle, Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -17,82 +17,80 @@ import Enter from '../../components/enter';
 
 
 import { captureRef } from 'react-native-view-shot';
-import * as SQLite from 'expo-sqlite';
-import RunBlock from '@/components/runblock';
 
+import RunBlock from '@/components/runblock';
+import { ToDBwriteWalk, SecondsToTime, ToDBwriteRun } from '@/hooks/useDB';
 const { height, width } = Dimensions.get('window');
 
 
 
-function SecundsToTime(i) {  
-  const hours = (i/3600).toFixed(0);       
-  const mins = Math.trunc((i - hours*3600)/60);
-  const sec = i - hours*3600 - mins*60;       
-  return ( hours + ' : ' + mins + ' : ' + sec.toFixed(0)); 
-}
+
 const Map = () => {
   const refzoom = useRef();
-  const timeRef = useRef<number>(null);
+  const timeRef = useRef<number>(0);
   const router = useRouter();
   const [status, requestPermission] = MediaLibrary.usePermissions();
-  const [pathData, setPathDate] = useState(0);
+
   const [startStop, setStartStop] = useState(true);
-  const [currentTime, setCurrentTime] = useState(Date.now())
+
   const [path, setPath] = useState(0);
+
   const [distance, setDistance] = useState(0);
   const [typeMap, settypeMap] = useState<string>('standard');
   const [zoom, setZoom] = useState(12);
-  
-  const [heightBlock, setHeightBlock] = useState(height - 45);
-  const [speed, setSpeed ] = useState(0);
+
+  const [heightBlock, setHeightBlock] = useState(height);
+  const [speed, setSpeed] = useState(0);
 
   const { nodes, name, movie, time } = useSelector((state) => state.track);
   const dispatch = useDispatch();
- 
-  useFocusEffect(useCallback(()=>{StatusBar.setBarStyle('dark-content');},[]))
+  console.log('map block');
+  
 
   useEffect(() => {
-    StatusBar.setBarStyle('dark-content');
-    setStartStop(true);
-    timeRef.current = Date.now();
-  },[name]);
- 
-  const GetLocations = async (i:{coordinate: {speed: number}}) => {
+    if (nodes.length === 1) {
+      timeRef.current = Date.now();
+      setStartStop(true);
+    }
+  }, [name]);
+
+  const GetLocations = async (i: { coordinate: { timestamp: number, latitude: number, longitude: number, speed: number } }) => {
     // let { status } = await Location.requestForegroundPermissionsAsync();
     // if (status !== 'granted') {
     //   console.log('Permission to access location was denied');
     //   return;
     // };
-    setCurrentTime(i.coordinate.timestamp);
-    console.log(nodes, time,movie, i.coordinate)
-    
-    if (movie === 'running') {      
+    console.log('get location', time, (i.coordinate.timestamp - timeRef.current) / 1000);
+
+    if (i.coordinate.timestamp - timeRef.current < (time * 60000 - 10000)) {
+      return;
+    }
+
+    const new_longitude = (i.coordinate.longitude + (0.01 - Math.random() / 50)).toFixed(7);
+    const new_latitude = (i.coordinate.latitude + (0.01 - Math.random() / 50)).toFixed(7)
+    if (movie === 'running') {
       const point = {
-        longitude: nodes.length === 0 ? i.coordinate.longitude  : 
-        nodes[nodes.length - 1].longitude + Math.random()/50,
-        latitude:   i.coordinate.latitude, 
+        longitude: nodes.length === 0 ? i.coordinate.longitude :
+          nodes.at(-1).longitude + Math.random() / 50,
+        latitude: i.coordinate.latitude,
         type: movie
-      };
-      dispatch(addpoint(point));
-      if( nodes.length > 1) {
-        setSpeed(i.coordinate.speed + Math.random()*10);
-        GetDistance();
-      }
+      };     
+      dispatch(addpoint(point))
+      setSpeed(i.coordinate.speed + Math.random() * 10);
+      GetDistance(point);
     } else {
       const point = {
-        longitude: nodes.length === 0 ? i.coordinate.longitude : i.coordinate.longitude + (0.01 - Math.random() / 50),
-        latitude: nodes.length === 0 ? i.coordinate.latitude : i.coordinate.latitude + (0.01 + Math.random() / 50),
+        longitude: Number(new_longitude),
+        latitude: Number(new_latitude),
         type: movie
-      };
-      dispatch(addpoint(point));
-      if( nodes.length > 0) {
-        GetDistance();
-      }
+      };         
+      dispatch(addpoint(point))
+      GetDistance(point);
     }
   };
   const Save = () => {
     Alert.alert('Сохранить путь',
-      name + ', \n' + 'time: ' + SecundsToTime((Date.now() - timeRef.current)/1000) + ',' +' \n' + 'path: ' + path + ' m.',
+      name + ', \n' + 'time: ' + SecondsToTime(timeRef.current) + ',' + ' \n' + 'path: ' + path + ' m.',
       [
         {
           text: 'НЕТ',
@@ -114,24 +112,20 @@ const Map = () => {
       });
       const { id } = await MediaLibrary.createAssetAsync(localUri);
       const album = await AsyncStorage.getItem('album');
-      const db = await SQLite.openDatabaseAsync('tracker', {
-        useNewConnection: true
-      });
-      const photo_count = nodes.filter(i => i.type === 'photo').length;
+
+      const photo_count = nodes.filter((i: { type: string; }) => i.type === 'photo').length;
       if (!album) {
         const new_album = await MediaLibrary.createAlbumAsync("TRACKER", id);
         await AsyncStorage.setItem('album', new_album.id.toString());
         await MediaLibrary.addAssetsToAlbumAsync([id], new_album.id.toString(), false);
-        await db.runAsync(`INSERT INTO paths (name, idpath, begintime, endtime, images, path, type) VALUES (?,?,?,?,?,?,?)`, [name, id, timeRef.current, Date.now(), photo_count, path, movie]);
+        ToDBwriteWalk({ name, id, timeRef, photo_count, path, movie });
       } else {
-        await MediaLibrary.addAssetsToAlbumAsync([id], album, false);
-        await db.runAsync(`INSERT INTO paths (name, idpath, begintime, endtime, images, path, type) VALUES (?,?,?,?,?,?,?)`, [name, id, timeRef.current , Date.now(), photo_count, path, movie]);
+        ToDBwriteWalk({ name, id, timeRef, photo_count, path, movie, album });
       }
-      dispatch(deletepoint([]));
-      dispatch(setname(''));
-      setDistance(0);
-      setPath(0);
-      router.push('/');
+      if (movie === 'running') {
+        ToDBwriteRun({ name, speed, distance, timeRef })
+      }
+      DeletePath();
     } catch (e) {
       console.log(e);
     }
@@ -139,20 +133,24 @@ const Map = () => {
 
   const DeletePath = () => {
     dispatch(deletepoint([]));
-    dispatch(setname(''));
     setDistance(0);
     setPath(0);
     router.push('/');
   };
 
-  function GetDistance() {
+  function GetDistance(item) {
     const distance = getDistance(
       { latitude: nodes[0].latitude, longitude: nodes[0].longitude },
-      { latitude: nodes.slice(-1)[0].latitude, longitude: nodes.slice(-1)[0].longitude },
+      { latitude: item.latitude, longitude: item.longitude },
       { Accuracy: 10 }
     )
     setDistance(distance);
-    GetPath();
+    if( nodes.length === 1 ) {
+      setPath(distance)
+    } else {
+      GetPath();
+    }
+    
   };
   type loc = { latitude: number, longitude: number }
   function Distance(a: loc, b: loc): number {
@@ -165,14 +163,14 @@ const Map = () => {
     return distance;
   };
   function GetPath() {
-    const path = nodes.reduce((acu, curr, index) =>
+    const path = nodes.reduce((acu: number, curr: { latitude: number; longitude: number; }, index: number) =>
       acu + Distance(curr, nodes[index + 1]), 0)
     setPath(path)
   };
 
 
 
-  
+
   const ZoomUp = async () => {
     let ss = await refzoom.current?.getCamera();
     ss.zoom += 0.7;
@@ -188,130 +186,126 @@ const Map = () => {
   const setTypeMap = () => {
     settypeMap(typeMap === 'satellite' ? 'standard' : 'satellite')
   };
-  
+
   if (status === null) {
     requestPermission();
   }
+  const int = timeRef.current;
   return (
-    <SafeAreaView style={styles.main_block}>      
-        {name.length > 0 ?
-          <>
-            {movie === 'running' ? null: <View style={styles.distance}>
-              <Text style={styles.distance_text}>To back{'\n'}{distance} m</Text>
-              <Text style={[styles.distance_text, styles.path]}>Path{'\n'}{path} m</Text>
-              <Text style={styles.distance_text}>Time{'\n'} {SecundsToTime((Date.now() - timeRef.current)/1000)} </Text>
-            </View>}
-            <MapView
-              ref={refzoom}
-              zoomEnabled={false}
-              mapType={typeMap}
-              showsUserLocation={startStop}
-             
-              onUserLocationChange={(e) => GetLocations(e.nativeEvent)}
-            
-              userLocationFastestInterval={time*60000}
-              style={[styles.map, { height: height - 248 }]}
-              onPress={()=>setHeightBlock(height - 45)}
-              region={{
-                latitude: 53.957598, 
-                longitude: 27.625336,
-                latitudeDelta: 0.02,
-                longitudeDelta: 0.02,
-              }}
-            >
-              <Polyline
-                coordinates={nodes}
-                strokeColor="#3d4eea"
-                strokeWidth={3}
-                
-              />
-              {nodes.map((i, index) => i.type === 'photo' ?
-                <Marker key={index}
-                  coordinate={{
-                    latitude: i.latitude,
-                    longitude: i.longitude
-                  }}
-                  calloutOffset={{ x: -15, y: -15 }}
-                  image={require('../../assets/images/camera.png')}
-                />
-                :
-                <Circle key={index}
-                  center={{
-                    latitude: i.latitude,
-                    longitude: i.longitude
-                  }}
-                  radius={index === 0 ? (30 * 2.5) / zoom : (index === nodes.length - 1) ? (30 * 2.5) / zoom : (30 * 2.5) / zoom}
-                  fillColor={index === 0 ? 'red' : (index === nodes.length - 1) ? '#fff' : 'gold'}
-                  strokeColor='yellow'
-                  strokeWidth={4}
-                />
-              )}
+    <SafeAreaView style={styles.main_block}>
+      <StatusBar barStyle='light-content' />
+      {nodes.length > 0 ?
+        <>
+          {movie === 'running' ? null : <View style={styles.distance}>
+            <Text style={styles.distance_text}>To back{'\n'}{distance} m</Text>
+            <Text style={[styles.distance_text, styles.path]}>Path{'\n'}{path} m</Text>
+            <Text style={styles.distance_text}>Time{'\n'} {SecondsToTime(int)} </Text>
+          </View>}
+          <MapView
+            ref={refzoom}
 
-            </MapView>
-            <View style={styles.btnContainer}>
-              <FontAwesome name="search-minus" onPress={ZoomDown} size={40} color="#000" />
-              <Ionicons
-                onPress={setTypeMap}
-                name={typeMap === 'standard' ? "earth-outline" : "earth-sharp"}
-                size={50}
-                color='#000'
+            mapType={typeMap}
+            showsUserLocation={startStop}
+            userLocationPriority='low'
+            followsUserLocation={true}
+            onUserLocationChange={(e) => GetLocations(e.nativeEvent)}
+            userLocationFastestInterval={time * 60000}
+            style={[styles.map, { height: height - 225 }]}
+            onPress={() => setHeightBlock(height - 45)}
+            region={{
+              latitude: nodes[0]?.latitude,
+              longitude: nodes[0]?.longitude,
+              latitudeDelta: 0.02,
+              longitudeDelta: 0.02,
+            }}
+          >
+            <Polyline
+              coordinates={nodes}
+              strokeColor="#3d4eea"
+              strokeWidth={3}
+            />
+            {nodes.map((i: { type: string; latitude: any; longitude: any; }, index: Key | null | undefined) => i.type === 'photo' ?
+              <Marker key={index}
+                coordinate={{
+                  latitude: i.latitude,
+                  longitude: i.longitude
+                }}
+                calloutOffset={{ x: -15, y: -15 }}
+                image={require('../../assets/images/camera.png')}
               />
-              <FontAwesome name="search-plus" onPress={ZoomUp} size={40} color="#000" />
-            </View>
-      
-            {movie === 'running' ? 
-            <RunBlock 
-              height = {heightBlock}
-              setheight = {setHeightBlock}
+              :
+              <Circle key={index}
+                center={{
+                  latitude: i.latitude,
+                  longitude: i.longitude
+                }}
+                radius={index === 0 ? (50 * 2.5) / zoom : (index === nodes.length - 1) ? (50 * 2.5) / zoom : 0}
+                fillColor={index === 0 ? 'red' : (index === nodes.length - 1) ? '#fff' : 'gold'}
+                strokeColor='yellow'
+                strokeWidth={2}
+              />
+            )}
+
+          </MapView>
+          <View style={styles.btnContainer}>
+            <FontAwesome name="search-minus" onPress={ZoomDown} size={40} color="#000" />
+            <Ionicons
+              onPress={setTypeMap}
+              name={typeMap === 'standard' ? "earth-outline" : "earth-sharp"}
+              size={50}
+              color='#000'
+            />
+            <FontAwesome name="search-plus" onPress={ZoomUp} size={40} color="#000" />
+          </View>
+
+          {movie === 'running' && height !==0 ?
+            <RunBlock
+              height={heightBlock}
+              setheight={setHeightBlock}
               distance={distance}
-              time={(Date.now() - timeRef.current)/1000}
+              time={timeRef.current}
               speed={speed}
-            /> 
-            : 
-            null}
-        
-
-        <View style={[styles.btnContainer, styles.startstop, { gap: 10 }]}>
-          {startStop ? (
-            <TouchableHighlight
-              style={[styles.btnStop, { width: '100%' }]}
-              onPress={()=>setStartStop(false)}
-            >
-              <Text style={[styles.btnText, { backgroundColor: 'purple' }]}>
-                Stop write path
-              </Text>
-            </TouchableHighlight>) : (<>
+            /> : null}
+          <View style={[styles.btnContainer, styles.startstop, { gap: 10 }]}>
+            {startStop ? (
               <TouchableHighlight
-                style={styles.btnStop}
-                onPress={Save}
+                style={[styles.btnStop, { width: '100%' }]}
+                onPress={() => setStartStop(false)}
               >
-                <Text style={[styles.btnText, { backgroundColor: 'maroon' }]}>
-                  Save
+                <Text style={[styles.btnText, { backgroundColor: 'purple' }]}>
+                  Stop write path
                 </Text>
-              </TouchableHighlight>
-              <TouchableHighlight
-                style={[styles.btnStop, { backgroundColor: 'red', alignItems: 'center', justifyContent: 'center' }]}
-                onPress={DeletePath}
-              >
-                <Ionicons
-                  name="trash"
-
-                  size={30}
-                  color='#fff'
-                />
-              </TouchableHighlight>
-              <TouchableHighlight
-                style={styles.btnStop}
-                onPress={()=>setStartStop(true)}
-              >
-                <Text style={[styles.btnText, { backgroundColor: 'green' }]}>
-                  Continue
-                </Text>
-              </TouchableHighlight>
-            </>)
-          }
-        </View>
-      </>
+              </TouchableHighlight>) : (<>
+                <TouchableHighlight
+                  style={styles.btnStop}
+                  onPress={Save}
+                >
+                  <Text style={[styles.btnText, { backgroundColor: 'maroon' }]}>
+                    Save
+                  </Text>
+                </TouchableHighlight>
+                <TouchableHighlight
+                  style={[styles.btnStop, { backgroundColor: 'red', alignItems: 'center', justifyContent: 'center' }]}
+                  onPress={DeletePath}
+                >
+                  <Ionicons
+                    name="trash"
+                    size={30}
+                    color='#fff'
+                  />
+                </TouchableHighlight>
+                <TouchableHighlight
+                  style={styles.btnStop}
+                  onPress={() => setStartStop(true)}
+                >
+                  <Text style={[styles.btnText, { backgroundColor: 'green' }]}>
+                    Continue
+                  </Text>
+                </TouchableHighlight>
+              </>)
+            }
+          </View>
+        </>
         :
         <Enter typemove={movie} />
       }
@@ -377,7 +371,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     gap: 30,
     alignItems: 'center'
-
   },
   startstop: {
     position: 'absolute',
