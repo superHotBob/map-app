@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, ImageBackground, Pressable, StatusBar, Button } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as MediaLibrary from 'expo-media-library';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SQLite from 'expo-sqlite';
 import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { Duration } from '@/hooks/useDB';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const { width, height } = Dimensions.get('window');
@@ -31,79 +32,74 @@ const Carusel = () => {
         { dateStyle: 'short', timeStyle: 'short', timeZone: "Europe/Minsk" }
     );
 
-    console.log('photo block');
-    const {type, start, end, name, id: id_path, path } = useLocalSearchParams();
 
-    useEffect(() => {
-        StatusBar.setBarStyle('dark-content');
-        async function GetAssets() {
-            const db = await SQLite.openDatabaseAsync('tracker', {
-                useNewConnection: true
-            });
-            const path = await db.getAllAsync(`SELECT * FROM paths where id = ${id_path}`);
+    const { type, start, end, name, id: id_path, path } = useLocalSearchParams();
 
-            const { id } = await MediaLibrary.getAlbumAsync("album_photo");
-            const { assets } = await MediaLibrary.getAssetsAsync({ album: id });
-
-            const new_assets = assets.filter(i => i.modificationTime > +start && i.modificationTime < +end)
-            setAssets([...new_assets]);
-
-        }
-        GetAssets();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            async function GetAssets() {               
+                const id = await AsyncStorage.getItem('photo');                
+                const { assets } = await MediaLibrary.getAssetsAsync({ album: id });               
+                const new_assets = assets.filter(i => i.modificationTime > +start && i.modificationTime < +end)
+                setAssets([...new_assets]);
+            };
+            GetAssets();
+        }, [result])
+    );
 
     async function DeletePath() {
         const db = await SQLite.openDatabaseAsync('tracker', {
             useNewConnection: true
         });
         await db.runAsync(`delete from paths where id = ${id_path}`);
-        const ids = assets.map(i=>i.id);
+        const ids = assets.map(i => i.id);
         await MediaLibrary.deleteAssetsAsync(ids);
         Toast.hide();
-    }; 
-   
-    async function Delete() {
+    };
+
+    async function DeleteImage() {
         const result = await MediaLibrary.deleteAssetsAsync([idImage]);
         setResult(result);
     };
-    function GetId(id:number) {
+    function GetIdImage(id: number) {
         setIdImage(id)
     };
     const toastConfig = {
         tomatoToast: ({ text1 }) => (
-            <View style={[styles.messages,{width: '98%',  backgroundColor: '#ccc' }]}>
-              <Text style={styles.messageText}>{text1}</Text>
-              <Button title="YES" onPress={DeletePath} />
-              <Button title="NO" onPress={()=>Toast.hide()} />
+            <View style={[styles.messages, { width: '98%', backgroundColor: '#ccc' }]}>
+                <Text style={styles.messageText}>{text1}</Text>
+                <Button title="YES" onPress={DeletePath} />
+                <Button title="NO" onPress={() => Toast.hide()} />
             </View>
         )
     }
     const showToast = () => {
         Toast.show({
-          type: 'tomatoToast',
-          autoHide: false,
-          topOffset: 200,
-          text1: 'Do you want delete it path?',
-          
+            type: 'tomatoToast',
+            autoHide: false,
+            topOffset: 200,
+            text1: 'Do you want delete it path?',
+
         });
-      }
+    }
     return (
         <View style={styles.mainBlock}>
+            <StatusBar barStyle="light-content" />
             <View style={styles.header}>
-                <Ionicons onPress={()=>router.back()} name="arrow-back" color="blue" size={25} />
+                <Ionicons onPress={() => router.back()} name="arrow-back" color="blue" size={25} />
                 <Text style={styles.name}>{name}</Text>
                 <FontAwesome onPress={showToast} name="trash-o" color="blue" size={25} />
-            </View>           
-            <Text style={styles.data}>Type: {type}</Text>
-            <Text style={styles.data}>Date: {path_date(date)}</Text>
-            <Text style={styles.data}>Time: {Duration(start, end)} sec</Text>
+            </View>
+            <Text style={styles.data}><Text style={styles.keys}>Type:</Text> {type}</Text>
+            <Text style={styles.data}><Text style={styles.keys}>Date:</Text> {path_date(date)}</Text>
+            <Text style={styles.data}><Text style={styles.keys}>Duration:</Text> {Duration(start, end)} sec</Text>
             <Text style={styles.data}>Distance: {path} m</Text>
             <ScrollView horizontal={true} onScrollBeginDrag={() => setIdImage(null)}>
                 <View style={styles.imagesBlock}>
                     {assets.map(i =>
                         <Pressable
                             key={i.id}
-                            onPress={() => GetId(i.id)}
+                            onPress={() => GetIdImage(i.id)}
                             style={[styles.image, { opacity: result ? 0.3 : 1 }]}
                         >
                             <ImageBackground
@@ -111,14 +107,14 @@ const Carusel = () => {
                                 source={{ uri: i.uri }}
                                 resizeMode='cover'
                             >
-                                <Text/>
+                                <Text />
                             </ImageBackground>
                         </Pressable>
                     )}
-                    <View style={{justifyContent: 'center', height: height/2, width: +width,backgroundColor: '#ddd'}}>
-                    <Text style={styles.noimage}>NO IMADE</Text>
+                    <View style={{ justifyContent: 'center', height: height / 2, width: +width, backgroundColor: '#ddd' }}>
+                        <Text style={styles.noimage}>NO IMADE</Text>
                     </View>
-                    
+
                 </View>
 
             </ScrollView>
@@ -127,7 +123,7 @@ const Carusel = () => {
                 style={styles.btnDelete}
                 colors={['#4c669f', '#3b5998', '#192f6a']}
             >
-                <TouchableOpacity style={styles.btnDelete} disabled={result} onPress={Delete}>
+                <TouchableOpacity  disabled={result} onPress={DeleteImage}>
                     <Text style={styles.delete_text}>
                         {result ? 'PHOTO DELETED' : 'DELETE PHOTO'}
                     </Text>
@@ -186,15 +182,19 @@ const styles = StyleSheet.create({
     },
     data: {
         marginTop: 5,
-        fontSize: 22,        
+        fontSize: 22,
         fontFamily: 'SpaceMono'
+    },
+    keys: {
+        fontWeight: 'bold',
+        fontSize: 20
     },
     btnDelete: {
         width: '98%',
         borderRadius: 29,
         height: 50,
         position: 'absolute',
-        bottom: 10
+        bottom: 300
     },
     delete_text: {
         textAlign: 'center',
@@ -202,17 +202,14 @@ const styles = StyleSheet.create({
         color: '#fff',
         lineHeight: 50,
         fontWeight: 'bold',
-        bottom: -10
+        
     },
     imagesBlock: {
         flexDirection: 'row',
         flexWrap: 'nowrap',
         alignItems: 'center',
         gap: 8,
-        zIndex:1,
-       
-        borderWidth: 1,
-        borderColor: 'yellow'
+        zIndex: 1,
     }
 })
 export default Carusel;

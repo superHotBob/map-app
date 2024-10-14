@@ -8,13 +8,15 @@ export async function ToDBwriteWalk(props) {
     await MediaLibrary.addAssetsToAlbumAsync([props.id], props.album, false);
     
         
-        await db.runAsync(`INSERT INTO paths (name, idpath, begintime, endtime, images, path, type) 
-            VALUES (?,?,?,?,?,?,?)`,
+        await db.runAsync(`INSERT INTO paths (name, begintime, endtime, images, path, type) 
+            VALUES (?,?,?,?,?,?)`,
             [
-                props.name, props.id,
+                props.name,                
                 props.timeRef.current,
-                Date.now(), props.photo_count,
-                props.path, props.movie
+                Date.now(), 
+                props.photo_count,
+                props.path, 
+                props.type
             ]
         );
    

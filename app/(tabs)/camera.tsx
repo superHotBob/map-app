@@ -22,7 +22,7 @@ function Camera() {
     const cameraRef = useRef(null)
     const nodes = useSelector((state) => state.track.nodes)
     const dispatch = useDispatch();
-    StatusBar.setBarStyle('dark-content');
+
     console.log('camera block');
     if (!permission) {
         // Camera permissions are still loading.
@@ -47,18 +47,37 @@ function Camera() {
         }
     }
     async function takePicture() {
+        const id = await AsyncStorage.getItem('photo');
+        console.log('photo id', id)
         try {
-            
             const photo = await cameraRef.current!.takePictureAsync();
-            const asset = await MediaLibrary.createAssetAsync(photo.uri);
-            await MediaLibrary.addAssetsToAlbumAsync([asset.id], '587356258', false);
-            const data = await Location.getCurrentPositionAsync({});
-            const point = {
-                longitude: data.coords.longitude + (0.01 - Math.random() / 50),
-                latitude: data.coords.latitude + (0.01 + Math.random() / 50),
-                type: 'photo'
-            };
-            dispatch(addpoint(point));            
+            
+            // const asset = await MediaLibrary.createAssetAsync(photo.uri);
+            console.log(photo)
+            if (id === null) {
+                await MediaLibrary.createAlbumAsync('photo', asset, false);
+                const album = await MediaLibrary.getAlbumAsync('photo');
+               
+                await AsyncStorage.setItem('photo', album.id)
+
+                const data = await Location.getCurrentPositionAsync({});
+                const point = {
+                    longitude: data.coords.longitude + (0.01 - Math.random() / 50),
+                    latitude: data.coords.latitude + (0.01 + Math.random() / 50),
+                    type: 'photo'
+                };
+                dispatch(addpoint(point));
+
+            } else {
+                await MediaLibrary.addAssetsToAlbumAsync([asset.id], id, false);
+                const data = await Location.getCurrentPositionAsync({});
+                const point = {
+                    longitude: data.coords.longitude + (0.01 - Math.random() / 50),
+                    latitude: data.coords.latitude + (0.01 + Math.random() / 50),
+                    type: 'photo'
+                };
+                dispatch(addpoint(point));
+            }
         } catch (e) {
             console.log(e)
         }
@@ -74,7 +93,7 @@ function Camera() {
                 <LinearGradient style={styles.plusBtn} colors={background}>
                     <Ionicons onPress={() => setZoom(zoom === 0.0 ? 0 : zoom - 0.1)} name="remove-sharp" size={25} color="#fff" />
                 </LinearGradient>
-                <Text style={styles.text}>{(zoom*10).toFixed(0)}</Text>
+                <Text style={styles.text}>{(zoom * 10).toFixed(0)}</Text>
                 <LinearGradient style={styles.plusBtn} colors={background}>
                     <Ionicons onPress={() => setZoom(zoom === 1 ? 1 : zoom + 0.1)} name="add" size={25} color="#fff" />
                 </LinearGradient>
@@ -94,10 +113,10 @@ function Camera() {
                 facing={facing}
                 enableTorch={true}
             />
-            <View style={styles.six}>               
-                <LinearGradient style={[styles.plusBtn,styles.photo]} colors={background}>
-                    <Ionicons disabled={nodes.length === 0} onPress={takePicture} name="camera" size={40} color="#fff" />
-                </LinearGradient>               
+            <View style={styles.six}>
+                <LinearGradient style={[styles.plusBtn, styles.photo]} colors={background}>
+                    <Ionicons   onPress={takePicture} name="camera" size={40} color="#fff" />
+                </LinearGradient>
             </View>
         </View>
     );
@@ -109,7 +128,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
         paddingBottom: 20,
         marginTop: StatusBar.currentHeight
-        
+
     },
     message: {
         textAlign: 'center',
@@ -124,7 +143,7 @@ const styles = StyleSheet.create({
     },
     camera: {
         width: '100%',
-       
+
     },
     plusBtn: {
         height: 50,
@@ -140,7 +159,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 'auto',
         borderRadius: 50,
         alignContent: 'center'
-        
+
     },
     flash: {
         width: 50,
@@ -171,6 +190,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 20,
         width: '100%'
-       
+
     }
 });

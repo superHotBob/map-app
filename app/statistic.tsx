@@ -8,7 +8,7 @@ const Path_date = (i: number) => new Date(i).toLocaleString('en-US',
     { dateStyle: 'short', year: '2-digit' });
 
 
-const { height } = Dimensions.get('window');
+
 interface MyArray {
     name: string,
     path: number,
@@ -29,7 +29,7 @@ function Statistic() {
             });
             const paths = await db.getAllAsync('SELECT * FROM paths ORDER BY begintime DESC');           
             setPath(paths);
-            console.log(paths)
+            
             
         };
         GetPaths();
@@ -69,7 +69,7 @@ function Statistic() {
     
     return (
         <View style={styles.mainBlock}>
-            <Text style={styles.headerText}>Statistics</Text>
+           
             <View style={styles.pathBlock}>
                 {['Name', 'Date', 'Type', 'Photo'].
                     map(i => <Text key={i} style={[styles.date,{width: i=== 'Name'? '30%': '23%'}]}>{i}</Text>)}
@@ -87,16 +87,12 @@ const styles = StyleSheet.create({
     mainBlock: {
         width: '100%',
         backgroundColor: '#fff',
-        borderRadius: 28,
+        paddingTop: 50,
         paddingBottom: 25,
-        height: height -225
+        flex: 1,
+        
     },
-    headerText: {
-        textAlign: 'center',
-        paddingTop: 10,
-        fontSize: 22,
-        fontWeight: 'bold',
-    },
+    
     pathBlock: {
         paddingVertical: 15,
         flexDirection: 'row',
@@ -107,13 +103,12 @@ const styles = StyleSheet.create({
         width: '25%',
         fontWeight: 'bold',
         textAlign: 'center',
-        fontSize: 17,
+        fontSize: 22,
         color: 'blue'
     },
     
     text: {
         width: '23%',
-        textAlign: 'center',
-        
+        textAlign: 'center'
     }
 })

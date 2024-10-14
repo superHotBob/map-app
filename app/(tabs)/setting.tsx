@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
-import { Text, View, StyleSheet, Switch, StatusBar } from "react-native";
+import { Text, View, StyleSheet, Switch, StatusBar, TouchableHighlight } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Colors } from "@/constants/Colors";
 import { useDispatch, useSelector } from "react-redux";
@@ -76,8 +76,13 @@ const Setting = () => {
                     value={braslet}
                 />
             </View>
-            <Ionicons style={styles.saveBtn} onPress={storeData} name="save" size={55} color="#4c669f" />
-
+            <TouchableHighlight
+                activeOpacity={0.6}               
+                underlayColor="#DDDDDD"
+                onPress={storeData}
+            >
+            <Ionicons style={styles.saveBtn}  name="save" size={65} color="#4c669f" />
+            </TouchableHighlight>
         </View>
     )
 };
@@ -96,7 +101,7 @@ const styles = StyleSheet.create({
     },
     mainText: {
         textAlign: 'center',
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: 'bold'
     },
     timeBlock: {
@@ -117,7 +122,7 @@ const styles = StyleSheet.create({
         fontSize: 30
     },
     saveBtn: {
-        height: 52,
+        height: 70,
         borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',

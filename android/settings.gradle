@@ -44,12 +44,15 @@ if (getRNMinorVersion() >= 75) {
   }
 }
 
-rootProject.name = 'Tracker'
+rootProject.name = 'tracker'
 
 dependencyResolutionManagement {
-   repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories{
-      maven { url "https://jitpack.io" }
+      google()
+      jcenter()
+      // mavenCentral()      
+      // maven { url "https://jitpack.io" }
     }
   versionCatalogs {
     reactAndroidLibs {

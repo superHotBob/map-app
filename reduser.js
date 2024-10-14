@@ -4,7 +4,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   nodes: [],
   name: '',
-  movie: '',
+  type: '',
   time: 1,
   weight: 70,
   braslet: false
@@ -27,8 +27,8 @@ export const pathSlice = createSlice({
      setweight: (state, action) => {      
       state.weight = action.payload;
      },
-    setmovie: (state, action) => {      
-      state.movie = action.payload;
+    settype: (state, action) => {      
+      state.type = action.payload;
      },
     deletepoint: (state, action) => {      
       state.nodes = [];
@@ -41,7 +41,7 @@ export const pathSlice = createSlice({
 });
 
 // Action creators are generated for each case reducer function
-export const {setbraslet, setweight, settime, addpoint, deletepoint, setname, setmovie } = pathSlice.actions;
+export const {setbraslet, setweight, settime, addpoint, deletepoint, setname, settype } = pathSlice.actions;
 
 // We export the reducer function so that it can be added to the store
 export default pathSlice.reducer;

@@ -1,4 +1,4 @@
-import { View, Alert, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, ImageBackground } from 'react-native';
+import { View, Alert, Image, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, ImageBackground } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,17 +11,17 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as SQLite from 'expo-sqlite';
 import Toast from 'react-native-toast-message';
-
+import ImageView from "react-native-image-viewing";
 const { width, height: myheight } = Dimensions.get('window');
 function clamp(val, min, max) {
     return Math.min(Math.max(val, min), max);
 }
 
-function Path_date(i:number) {    
+function Path_date(i: number) {
     return (new Date(+i)).toLocaleString('ru-RU',
-    { dateStyle: 'short', timeStyle: 'short', timeZone: "Europe/Minsk" }
+        { dateStyle: 'short', timeStyle: 'short', timeZone: "Europe/Minsk" }
     );
-};    
+};
 const Modal = () => {
     const [result, setResult] = useState(false);
     const scale = useSharedValue(1);
@@ -30,17 +30,18 @@ const Modal = () => {
     const translationY = useSharedValue(0);
     const prevTranslationX = useSharedValue(0);
     const prevTranslationY = useSharedValue(0);
-    const { filename, id, date , height, uri, item } = useLocalSearchParams();
-   
-    const imagefilename = filename.split('_');    
+    const [visible, setIsVisible] = useState(true);
+    const { filename, id, date, height, uri, item } = useLocalSearchParams();
 
+    const imagefilename = filename.split('_');
+    console.log(uri)
     const animatedStyles = useAnimatedStyle(() => ({
         transform: [
             { scale: scale.value },
             { translateX: translationX.value },
             { translateY: translationY.value },
         ],
-    }));   
+    }));
     async function DeletePath() {
         const db = await SQLite.openDatabaseAsync('tracker', {
             useNewConnection: true
@@ -87,7 +88,7 @@ const Modal = () => {
             };
         })
         .runOnJS(true);
-        
+
     const singleTap = Gesture.Tap()
         .maxDuration(250)
         .onStart(() => {
@@ -116,6 +117,9 @@ const Modal = () => {
         dragGesture, Gesture.Exclusive(doubleTap, singleTap),
         Gesture.Simultaneous(zoomGesture)
     );
+    const images = [{
+        uri: uri,
+    }];
 
     const showToast = () => {
         Toast.show({
@@ -137,29 +141,47 @@ const Modal = () => {
     return (
         <View style={styles.mainBlock}>
             <Text style={styles.data}>
-                {Path_date(date)} , {imagefilename[0]}
+                {Path_date(date)}
             </Text>
-            <View style={{ overflow: 'hidden', height: +height, width: width }}>
-                <GestureHandlerRootView >
-                    <GestureDetector gesture={composed}>
-                        <Animated.Image
-                            style={[styles.image, animatedStyles, { height: +height, opacity: result ? 0.3 : 1 }]}
+            {/* <View style={{ overflow: 'hidden', height: +height, width: width }}> */}
+            {/* <GestureHandlerRootView >
+                    <GestureDetector gesture={composed}> */}
+                        <Image
+                            style={[styles.image,  { height: +height, opacity: result ? 0.3 : 1 }]}
                             source={{ uri: uri }}
                             resizeMode='stretch'
+                            onProgress={()=>setIsVisible(true)}
                         />
-                    </GestureDetector>
-                </GestureHandlerRootView>
-            </View>
-            <LinearGradient
-                style={styles.btnDelete}
-                colors={['#4c669f', '#3b5998', '#192f6a']}
-            >
-                <TouchableOpacity disabled={result} onPress={Delete}>
-                    <Text style={styles.delete_text}>
-                        {result ? 'Deleted' : 'DELETE'}
-                    </Text>
-                </TouchableOpacity>
-            </LinearGradient>
+                    {/* </GestureDetector>
+                </GestureHandlerRootView> */}
+            <ImageView
+                images={images}
+                backgroundColor='#fff'
+                imageIndex={0}
+                presentationStyle="fullScreen"
+                visible={visible}
+                
+                HeaderComponent={({ imageIndex }) => {
+                    return (
+                <View >
+                    <Text onPress={() => setIsVisible(false)} style={[styles.data,{fontSize: 25}]}>{imagefilename[0]}</Text>
+                    <Text style={styles.data}>{Path_date(date)}</Text>
+
+                </View>)}
+                }
+                FooterComponent={({ }) => (
+                    <LinearGradient
+                        style={styles.btnDelete}
+                        colors={['#4c669f', '#3b5998', '#192f6a']}
+                    >
+                        <TouchableOpacity disabled={result} onPress={Delete}>
+                            <Text style={styles.delete_text}>
+                                {result ? 'Deleted' : 'DELETE'}
+                            </Text>
+                        </TouchableOpacity>
+                    </LinearGradient>
+                )}
+            />
             <Toast
                 position='bottom'
                 bottomOffset={120}
@@ -173,7 +195,7 @@ const styles = StyleSheet.create({
     mainBlock: {
         backgroundColor: '#fff',
         alignItems: 'center',
-        justifyContent: 'space-around',
+        justifyContent: 'flex-start',
         width: '100%',
         flex: 1,
         paddingVertical: 5
@@ -182,22 +204,28 @@ const styles = StyleSheet.create({
         width: '100%'
     },
     data: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
-        lineHeight: 20,
-        fontFamily: 'SpaceMono'
+        lineHeight: 40,
+        backgroundColor: '#fff',
+        fontFamily: 'SpaceMono',
+        width: '100%',
+        textAlign: 'center'
     },
     btnDelete: {
         width: '98%',
         borderRadius: 28,
-        height: 50
+        marginHorizontal: 'auto',
+        marginBottom: 20,
+        height: 50,
+
     },
     delete_text: {
         textAlign: 'center',
         fontSize: 25,
         color: '#fff',
         lineHeight: 50,
-        
+
     }
 })
 export default Modal;
