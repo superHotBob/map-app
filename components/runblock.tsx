@@ -3,17 +3,25 @@ import { SecondsToTime } from "@/hooks/useDB";
 import { useSelector } from "react-redux";
 import { useFonts } from 'expo-font';
 const { height: my_height } = Dimensions.get('window');
-console.log(my_height) 
 
-function RunBlock({ setheight, height, distance, time, speed }) {
-    console.log(height)
-    const [loaded, error] = useFonts({
+type Props = {
+    height: number,
+    distance: number,
+    time: number,
+    speed: number,
+    setheight: VoidFunction
+        
+    
+}
+
+function RunBlock({ setheight, height, distance, time, speed }:Props) {    
+    const [loaded] = useFonts({
         'fredoka': require('../assets/fonts/Fredoka-Bold.ttf'),
       });
     const { weight, braslet } = useSelector(state => state.track);
     if (!loaded) {
         return ;
-      }
+    }
     return (
         <View style={[styles.mainblock, { height: height }]}>
             <View style={[styles.blockitem, { height: my_height / 4.6 }]}>
@@ -38,10 +46,12 @@ function RunBlock({ setheight, height, distance, time, speed }) {
                 <Text style={styles.textitem}>burned</Text>
                 <Text style={styles.textitem}>{(weight * distance / 1000).toFixed(0)} ccal</Text>
             </View>
-            <View style={[styles.blockitem, {backgroundColor: 'green', height: my_height / 4.6 }]}>
-                <Text style={styles.textitem}>Heart Rate</Text>
-                <Text style={styles.textitem}>{100}</Text>
-            </View>
+            { braslet ? 
+                <View style={[styles.blockitem, {backgroundColor: 'green', height: my_height / 4.6 }]}>
+                    <Text style={styles.textitem}>Heart Rate</Text>
+                    <Text style={styles.textitem}>{100}</Text>
+                </View> 
+            : null }
             <Text onPress={() => setheight(0)} style={styles.tomap}>VIEW MAP</Text>
         </View>
     )

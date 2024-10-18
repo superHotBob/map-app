@@ -23,8 +23,7 @@ const Setting = () => {
             const time = await AsyncStorage.getItem('time');
             const weight = await AsyncStorage.getItem("weight");
             dispatch(settime(Number(time)));
-            dispatch(setweight(Number(weight)));
-            console.log(time, weight, braslet);
+            dispatch(setweight(Number(weight)));            
         };
         ReadStorage();
     }, [])

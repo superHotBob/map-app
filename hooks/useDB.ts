@@ -1,7 +1,19 @@
 import * as SQLite from 'expo-sqlite';
 import * as MediaLibrary from 'expo-media-library';
 
-export async function ToDBwriteWalk(props) {
+type Props = {
+    id: string,
+    name: string,
+    path: number,
+    type: string,
+    timeRef: Object,
+    album: string,
+    photo_count: number,
+    speed: number,
+    distance: number
+}
+
+export async function ToDBwriteWalk(props:Props) {
     const db = await SQLite.openDatabaseAsync('tracker', {
         useNewConnection: true
     });
@@ -19,20 +31,25 @@ export async function ToDBwriteWalk(props) {
                 props.type
             ]
         );
-   
+        console.log('Write to paths table');
 };
-export async function ToDBwriteRun(props) {
+export async function ToDBwriteRun(props:Props) {
     const db = await SQLite.openDatabaseAsync('tracker', {
         useNewConnection: true
     });
-    await MediaLibrary.addAssetsToAlbumAsync([props.id], props.album, false);
+   
     await db.runAsync(`INSERT INTO run (name, begintime, distance, time, calories, speed) 
-        VALUES (?,?,?,?,?,?,?)`,
-        [props.name, props.timeRef.current,
+        VALUES (?,?,?,?,?,?)`,
+        [
+            props.name, 
+            props.timeRef.current,
             props.distance,
-            props.time, props.calories, props.speed
+            Date.now(), 
+            100, 
+            props.speed.toFixed(1)
         ]
     );
+    console.log('Write to run table');
 }
 export function SecondsToTime(i) {  
     const time = (Date.now() - i)/1000;

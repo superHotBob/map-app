@@ -1,4 +1,4 @@
-import { Dimensions, StyleSheet, View, Text, Pressable, FlatList } from "react-native";
+import { StyleSheet, View, Text, Pressable, FlatList } from "react-native";
 
 import { useEffect, useState } from "react";
 import { useRouter } from 'expo-router';
@@ -28,8 +28,7 @@ function Statistic() {
                 useNewConnection: true
             });
             const paths = await db.getAllAsync('SELECT * FROM paths ORDER BY begintime DESC');           
-            setPath(paths);
-            
+            setPath(paths);         
             
         };
         GetPaths();
@@ -55,9 +54,9 @@ function Statistic() {
             }
         })
     }
-    type ItemProps = { i: Object };
+    type ItemProps = { i: {type: string, begintime: number} };
 
-    const Item = ({ i, index }) => (
+    const Item = ({ i, index }:ItemProps) => (
         <Pressable key={i.endtime} onPress={() => ViewImage(i)} style={[styles.pathBlock, { backgroundColor: index % 2 ? '#fff' : '#ddd' }]}>
             <Text style={[styles.text, { paddingHorizontal: 2, width: '30%' }]}>{i.name}</Text>
             <Text style={styles.text}>{Path_date(i.begintime)}</Text>
@@ -68,17 +67,17 @@ function Statistic() {
    
     
     return (
-        <View style={styles.mainBlock}>
-           
+        <View style={styles.mainBlock}>           
             <View style={styles.pathBlock}>
                 {['Name', 'Date', 'Type', 'Photo'].
                     map(i => <Text key={i} style={[styles.date,{width: i=== 'Name'? '30%': '23%'}]}>{i}</Text>)}
             </View>
             <FlatList               
                 data={path}
-                keyExtractor={item => item.endtime}
+                keyExtractor={item => item.endtime + ''}
                 renderItem={({ item, index }) => <Item i={item} index={index} />}
             />
+
         </View>
     )
 }
@@ -104,11 +103,12 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         fontSize: 22,
-        color: 'blue'
-    },
-    
+        color: 'blue',
+        letterSpacing: 1.4
+    },    
     text: {
         width: '23%',
-        textAlign: 'center'
+        textAlign: 'center',
+        letterSpacing: 1.2
     }
 })

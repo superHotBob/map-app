@@ -1,5 +1,5 @@
 import { Dimensions, StyleSheet, View, Text, Pressable, FlatList } from "react-native";
-
+import React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from 'expo-router';
 import * as SQLite from 'expo-sqlite';
@@ -29,9 +29,9 @@ function Statistic() {
             });
             const paths = await db.getAllAsync('SELECT * FROM paths ORDER BY begintime DESC');           
             setPath(paths);
-            console.log(paths)
+           
             
-        };
+        }
         GetPaths();
     }, []);
     type Image = {
@@ -57,7 +57,7 @@ function Statistic() {
     }
     type ItemProps = { i: Object };
 
-    const Item = ({ i, index }) => (
+    const Item = ({ i, index }:{i: ItemProps}) => (
         <Pressable key={i.endtime} onPress={() => ViewImage(i)} style={[styles.pathBlock, { backgroundColor: index % 2 ? '#fff' : '#ddd' }]}>
             <Text style={[styles.text, { paddingHorizontal: 2, width: '30%' }]}>{i.name}</Text>
             <Text style={styles.text}>{Path_date(i.begintime)}</Text>

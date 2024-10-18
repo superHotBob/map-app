@@ -8,6 +8,7 @@ import { useDispatch,useSelector } from "react-redux";
 import { setname, addpoint, settime, settype } from "@/reduser";
 import * as Location from 'expo-location';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 function Enter() {
     const [typemove, setTypeMove ] = useState('walking');
@@ -18,51 +19,58 @@ function Enter() {
     });
     const StartPath = async () => {
         let { status } = await Location.requestForegroundPermissionsAsync();
+
         if (status !== 'granted') {
             console.log('Permission to access location was denied');
             return;
         };
-        const data = await Location.getCurrentPositionAsync({});
+        const {coords} = await Location.getCurrentPositionAsync({});
+       
         const first_point = {
-            longitude: data.coords.longitude ,
-            latitude: data.coords.latitude ,
+            longitude: coords.longitude ,
+            latitude: coords.latitude ,
             type: typemove
         };
         const interval = await AsyncStorage.getItem('time');
         dispatch(settime(interval));
         dispatch(addpoint(first_point));
         dispatch(setname(name));  
-        dispatch(settype(typemove));     
+        dispatch(settype(typemove));
+        router.push('/(tabs)/map')     
     };
     
     return (
         <View style={styles.mainBlock}>
-            <Text style={{fontFamily: 'SpaceMono', fontSize: 22 }}>Select type</Text>
+            <Text style={{fontFamily: 'SpaceMono', fontSize: 24 }}>Select movie</Text>
             <View style={styles.selector}>                
                 <Text 
                     onPress={()=>setTypeMove('walking')} 
                     style={[
                         styles.btnText,
-                        {width: 150, backgroundColor: typemove === 'walking' ? 'green' : '#ddd'}]}
+                        {backgroundColor: typemove === 'walking' ? 'green' : '#ddd'}]}
                 >WALK</Text>
                 <Text 
                 onPress={()=>setTypeMove('running')} 
                 style={[
                     styles.btnText,
-                    {width: 150,backgroundColor: typemove === 'running' ? 'green' : '#ddd'}]}
+                    {backgroundColor: typemove === 'running' ? 'green' : '#ddd'}]}
                 >RUN</Text>
             </View>
+            
             <Text style={{fontFamily: 'SpaceMono', fontSize: 22 }}>Enter path name</Text>
             <TextInput
                 style={styles.input}
                 value={name}
+                placeholder="My best walk"
                 autoFocus
+                maxLength={15}
                 cursorColor="blue"
                 onChangeText={setName}
+                inputMode="text"
                 autoCapitalize='sentences'                
             />
             <TouchableHighlight disabled={name.length < 5} style={{ width: '80%',borderRadius: 28 }} onPress={StartPath}>
-                <Text style={styles.btnText}>START {typemove} </Text>
+                <Text style={[styles.btnText,{width: '100%'}]}>start {typemove} </Text>
             </TouchableHighlight>
         </View>
     );
@@ -73,7 +81,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         width: '80%',
         justifyContent: 'space-between',
-        marginVertical: 20
+        marginVertical: 10
     },
     input: {
         height: 60,
@@ -99,10 +107,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         backgroundColor: 'blue',
-        lineHeight: 55,
+        lineHeight: 60,
         height: 60,
         color: '#fff',
         borderRadius: 28,
-       
+        width: 120,
+       textTransform: 'uppercase'
     }
 });

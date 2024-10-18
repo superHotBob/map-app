@@ -50,8 +50,8 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories{
       google()
-      jcenter()
-      // mavenCentral()      
+      // jcenter()
+      mavenCentral()      
       // maven { url "https://jitpack.io" }
     }
   versionCatalogs {

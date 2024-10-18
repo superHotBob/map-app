@@ -1,19 +1,12 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useSelector } from 'react-redux';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
+  const { name } = useSelector(state => state.track)
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-      }}>
+    <Tabs screenOptions={{headerShown: false}}>
       <Tabs.Screen
         name="index"       
         options={{
@@ -26,8 +19,9 @@ export default function TabLayout() {
       />
        
       <Tabs.Screen
-        name="map"
-        options={{          
+        name = "map"               
+        options={{  
+          href: name.length > 0 ? '/(tabs)/map' : null  ,              
           tabBarShowLabel: false,
           tabBarActiveBackgroundColor: '#ddd',
           tabBarIcon: ({ focused }) => (

@@ -14,16 +14,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const background = Colors.light.background;
 
 function Camera() {
+    const cameraRef = useRef(null);
+    const dispatch = useDispatch();
     const [zoom, setZoom] = useState(0);
     const [ratio, setRatio] = useState('1:1');
     const [flash, setFlash] = useState<string>('off');
     const [facing, setFacing] = useState('back');
-    const [permission, requestPermission] = useCameraPermissions();
-    const cameraRef = useRef(null)
-    const nodes = useSelector((state) => state.track.nodes)
-    const dispatch = useDispatch();
+    const [permission, requestPermission] = useCameraPermissions();   
 
-    console.log('camera block');
+    
     if (!permission) {
         // Camera permissions are still loading.
         return <View />;
@@ -32,8 +31,8 @@ function Camera() {
         // Camera permissions are not granted yet.
         return (
             <View style={styles.container}>
-                <Text style={styles.message}>We need your permission to show the camera</Text>
-                <Button onPress={requestPermission} title="grant permission" />
+                <Text style={styles.message}>Нужно ваше разрешение на использование камеры</Text>
+                <Button onPress={requestPermission} title="Разрешить" />
             </View>
         );
     };
@@ -48,18 +47,15 @@ function Camera() {
     }
     async function takePicture() {
         const id = await AsyncStorage.getItem('photo');
-        console.log('photo id', id)
+       
         try {
-            const photo = await cameraRef.current!.takePictureAsync();
-            
-            // const asset = await MediaLibrary.createAssetAsync(photo.uri);
-            console.log(photo)
+            const photo = await cameraRef.current!.takePictureAsync();            
+            const asset = await MediaLibrary.createAssetAsync(photo.uri);
+           
             if (id === null) {
                 await MediaLibrary.createAlbumAsync('photo', asset, false);
-                const album = await MediaLibrary.getAlbumAsync('photo');
-               
-                await AsyncStorage.setItem('photo', album.id)
-
+                const album = await MediaLibrary.getAlbumAsync('photo');               
+                await AsyncStorage.setItem('photo', album.id);                
                 const data = await Location.getCurrentPositionAsync({});
                 const point = {
                     longitude: data.coords.longitude + (0.01 - Math.random() / 50),
@@ -67,7 +63,6 @@ function Camera() {
                     type: 'photo'
                 };
                 dispatch(addpoint(point));
-
             } else {
                 await MediaLibrary.addAssetsToAlbumAsync([asset.id], id, false);
                 const data = await Location.getCurrentPositionAsync({});
