@@ -1,7 +1,7 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useState, useRef, useEffect } from 'react';
 import { Button, StyleSheet, Text, View, Dimensions, StatusBar } from 'react-native';
-import * as MediaLibrary from 'expo-media-library';
+
 const { width } = Dimensions.get('window');
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addpoint } from '@/reduser';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Add_photo } from '@/scripts/functions';
 
 const background = Colors.light.background;
 
@@ -17,12 +18,12 @@ function Camera() {
     const cameraRef = useRef(null);
     const dispatch = useDispatch();
     const [zoom, setZoom] = useState(0);
-    const [ratio, setRatio] = useState('1:1');
-    const [flash, setFlash] = useState<string>('off');
-    const [facing, setFacing] = useState('back');
-    const [permission, requestPermission] = useCameraPermissions();   
+    const [ratio, setRatio] = useState(1);
+    const [flash, setFlash] = useState<number>(0);
+    const [facing, setFacing] = useState(0);
+    const [permission, requestPermission] = useCameraPermissions();
 
-    
+
     if (!permission) {
         // Camera permissions are still loading.
         return <View />;
@@ -47,32 +48,17 @@ function Camera() {
     }
     async function takePicture() {
         const id = await AsyncStorage.getItem('photo');
-       
+        
         try {
-            const photo = await cameraRef.current!.takePictureAsync();            
-            const asset = await MediaLibrary.createAssetAsync(photo.uri);
-           
-            if (id === null) {
-                await MediaLibrary.createAlbumAsync('photo', asset, false);
-                const album = await MediaLibrary.getAlbumAsync('photo');               
-                await AsyncStorage.setItem('photo', album.id);                
-                const data = await Location.getCurrentPositionAsync({});
-                const point = {
-                    longitude: data.coords.longitude + (0.01 - Math.random() / 50),
-                    latitude: data.coords.latitude + (0.01 + Math.random() / 50),
-                    type: 'photo'
-                };
-                dispatch(addpoint(point));
-            } else {
-                await MediaLibrary.addAssetsToAlbumAsync([asset.id], id, false);
-                const data = await Location.getCurrentPositionAsync({});
-                const point = {
-                    longitude: data.coords.longitude + (0.01 - Math.random() / 50),
-                    latitude: data.coords.latitude + (0.01 + Math.random() / 50),
-                    type: 'photo'
-                };
-                dispatch(addpoint(point));
-            }
+            const { uri } = await cameraRef.current!.takePictureAsync();                      
+            Add_photo(uri, id);
+            const data = await Location.getCurrentPositionAsync({});
+            const point = {
+                longitude: data.coords.longitude + ( 0.01 - Math.random()/50 ),
+                latitude: data.coords.latitude + ( 0.01 + Math.random()/50 ),
+                type: 'photo'
+            };
+            dispatch(addpoint(point));
         } catch (e) {
             console.log(e)
         }
@@ -83,7 +69,9 @@ function Camera() {
             <StatusBar barStyle='light-content' backgroundColor="#000" />
             <View style={styles.zoomBox}>
                 <LinearGradient style={[styles.plusBtn, styles.ratio]} colors={background}>
-                    <Text onPress={() => setRatio(ratio === '16:9' ? '1:1' : ratio === '1:1' ? '4:3' : '16:9')} style={styles.ratioText}>{ratio}</Text>
+                    <Text onPress={() => setRatio(ratio === 1 ? 4 : ratio === 4 ? 6 : 1)} style={styles.ratioText}>
+                        {ratio === 1 ? '1:1' : ratio === 4 ? '4:3' : '16:9'}
+                    </Text>
                 </LinearGradient>
                 <LinearGradient style={styles.plusBtn} colors={background}>
                     <Ionicons onPress={() => setZoom(zoom === 0.0 ? 0 : zoom - 0.1)} name="remove-sharp" size={25} color="#fff" />
@@ -93,24 +81,24 @@ function Camera() {
                     <Ionicons onPress={() => setZoom(zoom === 1 ? 1 : zoom + 0.1)} name="add" size={25} color="#fff" />
                 </LinearGradient>
                 <LinearGradient style={[styles.plusBtn, styles.flash]} colors={background}>
-                    <Ionicons onPress={() => setFlash('on')} name={flash === 'on' ? "flash-off" : "flash"} size={25} color="#ddd" />
+                    <Ionicons onPress={() => setFlash(flash === 1 ? 0 : 1)} name={flash === 1 ? "flash-off" : "flash"} size={25} color="#ddd" />
                 </LinearGradient>
                 <LinearGradient style={[styles.plusBtn, styles.flash]} colors={background}>
-                    <Ionicons onPress={() => setFacing(facing === 'front' ? 'back' : 'front')} name="camera-reverse-sharp" size={25} color="#fff" />
+                    <Ionicons onPress={() => setFacing(facing === 1 ? 0 : 1)} name="camera-reverse-sharp" size={25} color="#fff" />
                 </LinearGradient>
             </View>
             <CameraView
-                style={[styles.camera, { height: width * Ratio(ratio) }]}
+                style={[styles.camera, { height: width * Ratio(ratio === 1 ? '1:1' : ratio === 4 ? '4:3' : '16:9') }]}
                 ref={cameraRef}
                 zoom={zoom}
-                ratio={ratio}
-                flash={flash}
-                facing={facing}
+                ratio={ratio === 1 ? '1:1' : ratio === 4 ? '4:3' : '16:9'}
+                flash={flash === 0 ? 'off' : 'on'}
+                facing={facing === 0 ? 'back' : 'front'}
                 enableTorch={true}
             />
             <View style={styles.six}>
                 <LinearGradient style={[styles.plusBtn, styles.photo]} colors={background}>
-                    <Ionicons   onPress={takePicture} name="camera" size={40} color="#fff" />
+                    <Ionicons onPress={takePicture} name="camera" size={40} color="#fff" />
                 </LinearGradient>
             </View>
         </View>

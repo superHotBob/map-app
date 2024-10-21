@@ -1,13 +1,13 @@
 import { store } from '../store';
 import { Provider } from 'react-redux';
-import { Ionicons } from '@expo/vector-icons';
+
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import {  Alert } from 'react-native';
-import 'react-native-reanimated';
-import {  useGlobalSearchParams} from 'expo-router';
+// import 'react-native-reanimated';
+
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 // SplashScreen.preventAutoHideAsync();
@@ -17,7 +17,7 @@ export default function RootLayout() {
     'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
-  const { filename } = useGlobalSearchParams();  
+  
  
   useEffect(() => {    
     if (loaded) {
@@ -45,29 +45,34 @@ export default function RootLayout() {
           
       },
     );
+    const styleHeader = {
+      color: 'blue',
+      fontSize: 22, 
+      fontFamily: 'SpaceMono',
+      fontWeight: 'bold'
+    }
     
   return (
     <Provider store={store}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen 
-          name="photo" 
+          name="path" 
           options={{
             headerTintColor: 'blue', 
             headerTitleAlign: 'center', 
             title: 'Photos', 
-            headerTitleStyle:{color: 'blue',fontSize: 22, fontFamily: 'SpaceMono'},  
+            headerTitleStyle:styleHeader,  
             headerShown: false
           }} 
         />
         <Stack.Screen 
           name="statistic" 
           options={{
-            headerTintColor: 'blue', 
-            
+            headerTintColor: 'blue',            
             headerTitleAlign: 'center', 
             title: 'Statistic', 
-            headerTitleStyle:{color: 'blue',fontSize: 22, fontFamily: 'SpaceMono'},  
+            headerTitleStyle: styleHeader,  
             headerShown: true
           }} 
         />
@@ -77,7 +82,7 @@ export default function RootLayout() {
             headerTintColor: 'blue', 
             headerTitleAlign: 'center', 
             title: 'My paths', 
-            headerTitleStyle:{color: 'blue',fontSize: 22, fontFamily: 'SpaceMono'},  
+            headerTitleStyle: styleHeader,  
             headerShown: true
           }} 
         /> 
@@ -87,7 +92,7 @@ export default function RootLayout() {
             headerTintColor: 'blue', 
             headerTitleAlign: 'center', 
             title: 'Begin path', 
-            headerTitleStyle:{color: 'blue',fontSize: 22, fontFamily: 'SpaceMono'},  
+            headerTitleStyle:styleHeader,  
             headerShown: true
           }} 
         />   

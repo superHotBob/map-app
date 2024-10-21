@@ -1,19 +1,15 @@
 import { StyleSheet, View, Dimensions, Alert, Text, TouchableHighlight, StatusBar } from 'react-native';
-import { useEffect, useState, useRef, useCallback, Key } from 'react';
-
+import { useEffect, useState, useRef,  Key } from 'react';
 import MapView, { Circle, Marker, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import getDistance from 'geolib/es/getDistance';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as MediaLibrary from 'expo-media-library';
-
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import { useSelector, useDispatch } from 'react-redux';
 import { addpoint, deletepoint, setname } from '@/reduser';
-
 import { captureRef } from 'react-native-view-shot';
 import RunBlock from '@/components/runblock';
 import { ToDBwriteWalk, SecondsToTime, ToDBwriteRun } from '@/hooks/useDB';
@@ -34,18 +30,15 @@ const Map = () => {
   const [speed, setSpeed] = useState(0);
   const { nodes, name, type, time } = useSelector((state) => state.track);
 
-
-
-
   useEffect(() => {
     if (nodes.length === 1) {
-      timeRef.current = Date.now();
-      console.log('enter to map')
+      timeRef.current = Date.now();      
       setStartStop(true);
     }
   }, [name]);
 
   const GetLocations = async (i: { coordinate: { timestamp: number, latitude: number, longitude: number, speed: number } }) => {
+    console.log('getgeolocation');
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
       console.log('Permission to access location was denied');
@@ -53,8 +46,7 @@ const Map = () => {
     };
     if ((i.coordinate.timestamp - timeRef.current) < (time * 60000 - 10000)) {      
       return;
-    }
-
+    };
     const new_longitude = (i.coordinate.longitude + (0.01 - Math.random() / 50)).toFixed(7);
     const new_latitude = (i.coordinate.latitude + (0.01 - Math.random() / 50)).toFixed(7)
     if (type === 'running') {
@@ -100,31 +92,28 @@ const Map = () => {
         quality: 1,
       });
       const { id } = await MediaLibrary.createAssetAsync(localUri);
-      const album = await AsyncStorage.getItem('album');
+      const album_id = await AsyncStorage.getItem('album');
 
       const photo_count = nodes.filter((i: { type: string; }) => i.type === 'photo').length;
-      if (!album) {
+      if (!album_id) {
         const new_album = await MediaLibrary.createAlbumAsync("tracker", id);
         await AsyncStorage.setItem('album', new_album.id.toString());
         await MediaLibrary.addAssetsToAlbumAsync([id], new_album.id.toString(), false);
-        const album = new_album;
-        ToDBwriteWalk({ name, timeRef, photo_count, path, type, album, id });
+        const album_id = new_album;
+        ToDBwriteWalk({ name, timeRef, photo_count, path, type, album_id, id });
         if (type === 'running') {
-          ToDBwriteRun({ name, speed, distance, timeRef, album, id });
+          ToDBwriteRun({ name, speed, distance, timeRef, album_id, id });
         };
 
       } else {
         if (type === 'walking' ) {
-          ToDBwriteWalk({ name, timeRef, photo_count, path, type, album, id });
+          ToDBwriteWalk({ name, timeRef, photo_count, path, type, album_id, id });
         } else {
           let path = distance;
-          ToDBwriteWalk({ name, timeRef, photo_count, path, type, album, id });
+          ToDBwriteWalk({ name, timeRef, photo_count, path, type, album_id, id });
           ToDBwriteRun({ name, speed, distance, timeRef });
-        }
-        
-      
-      }
-     
+        }      
+      }     
       DeletePath();
     } catch (e) {
       console.log(e);
@@ -263,7 +252,7 @@ const Map = () => {
           time={timeRef.current}
           speed={speed}
         /> : null}
-      <View style={[styles.btnContainer, styles.startstop, { gap: 10 }]}>
+      <View style={[styles.btnContainer, styles.btnStartStop, { gap: 10 }]}>
         {startStop ? (
           <TouchableHighlight
             style={[styles.btnStop, { width: '100%' }]}
@@ -365,7 +354,7 @@ const styles = StyleSheet.create({
     gap: 30,
     alignItems: 'center'
   },
-  startstop: {
+  btnStartStop: {
     position: 'absolute',
     bottom: 10
   },

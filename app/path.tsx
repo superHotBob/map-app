@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as SQLite from 'expo-sqlite';
 import Toast from 'react-native-toast-message';
 import { useFonts } from 'expo-font';
-
+import { Path_date } from '../scripts/functions';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { Duration } from '@/hooks/useDB';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -28,9 +28,7 @@ const Carusel = () => {
       });
 
     const { date = Date.now(), } = useLocalSearchParams();
-    const path_date = (i) => (new Date(+i)).toLocaleString('ru-RU',
-        { dateStyle: 'short', timeStyle: 'short', timeZone: "Europe/Minsk" }
-    );
+   
 
 
     const { type, start, end, name, id: id_path, path } = useLocalSearchParams();
@@ -87,7 +85,7 @@ const Carusel = () => {
             type: 'tomatoToast',
             autoHide: false,
             topOffset: 200,
-            text1: 'Do you want delete  path ?',
+            text1: 'Do you want delete path ?',
         });
     }
     return (
@@ -99,7 +97,7 @@ const Carusel = () => {
                 <FontAwesome onPress={showToast} name="trash-o" color="blue" size={25} />
             </View>
             <Text style={styles.data}><Text style={styles.keys}>Type:</Text> {type}</Text>
-            <Text style={styles.data}><Text style={styles.keys}>Date:</Text> {path_date(date)}</Text>
+            <Text style={styles.data}><Text style={styles.keys}>Date:</Text> {Path_date(date)}</Text>
             <Text style={styles.data}><Text style={styles.keys}>Duration:</Text> {Duration(start, end)} sec</Text>
             <Text style={styles.data}>Distance: {path} m</Text>
             {type === 'running' ?
@@ -170,7 +168,8 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 22,
         color: 'blue',
-        fontFamily: 'SpaceMono'
+        fontFamily: 'SpaceMono',
+
     },
     messages: {
         padding: 20,
@@ -200,7 +199,9 @@ const styles = StyleSheet.create({
     data: {
         marginTop: 5,
         fontSize: 22,
-        fontFamily: 'SpaceMono'
+        fontFamily: 'SpaceMono',
+        letterSpacing: 0.08,
+        
     },
     keys: {
         fontWeight: 'bold',

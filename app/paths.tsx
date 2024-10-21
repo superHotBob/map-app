@@ -9,21 +9,22 @@ import {
 } from "react-native";
 import { useCallback, useState } from "react";
 import { router, useFocusEffect } from 'expo-router';
+import { Path_date } from "@/scripts/functions";
 import * as MediaLibrary from 'expo-media-library';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ImageView from "react-native-image-viewing";
 import { Ionicons } from "@expo/vector-icons";
-
+import * as SQLite from 'expo-sqlite';
 const width_window = Dimensions.get('window').width;
-const Path_date = (i: number) => new Date(i).toLocaleString('ru-RU',
-  { dateStyle: 'short', timeStyle: 'short', timeZone: "Europe/Minsk" });
+
 const GetNamePath = (a: string) => a.split('_')[0];
 
-function Patch() {
+export default function Patch() {
   const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
   const [images, setImages] = useState([]);
   const [visible, setIsVisible] = useState(false);
   const [imageindex, setImageIndex] = useState(0);
+
   useFocusEffect(useCallback(() => {
     GetPaths();
     setIsVisible(false);
@@ -33,27 +34,50 @@ function Patch() {
       await requestPermission();
     }
     const id = await AsyncStorage.getItem('album');
-    const { assets } = await MediaLibrary.getAssetsAsync({ album: id });
+    const { assets } = await MediaLibrary.getAssetsAsync({ album: id });   
     setImages(assets);
+    
+  };
+  async function DeletePath(i:string) {
+    await MediaLibrary.deleteAssetsAsync([i.id]);
+    setIsVisible(false);
+    GetPaths();
   };
 
 
   function SavePath(i: { uri: string }) {
     return images.map(i => Object.assign({}, { uri: i.uri }))
   }
-  function GoToStatistic(i) {
-    router.push({
-      pathname: '/photo',
-      params: { name: i.split('_')[0] }
-    })
+  async function GoToStatistic(i:string) {
+    const name =  i.split('_')[0]
+    const db = await SQLite.openDatabaseAsync('tracker', {
+      useNewConnection: true
+    });
+    const path = await db.getAllAsync(`SELECT * FROM paths where name = ?`,[name]); 
+            
+   
+ 
+      router.push({
+          pathname: '/path',
+          params:  {
+              start: path[0].begintime,
+              end: path[0].endtime,
+              type:path[0].type,
+              name: path[0].name,
+              id: path[0].id,
+              path: path[0].path
+          }
+      })
   };
+   
+  
 
 
   function SetIsVisible(index: number) {
     setImageIndex(index);
     setIsVisible(true);
   }
-  const Item = ({ item, index }: { index: number, item: Object }) => (
+  const Item = ({ item, index }: { index: number, item: {uri: string, modificationTime: number} }) => (
     <Pressable style={styles.imageTextPress} onPress={() => SetIsVisible(index)}>
       <Image
         style={{ width: (width_window / 2) - 15, height: ((width_window / 2) - 10) * (item.height / item.width) }}
@@ -63,15 +87,13 @@ function Patch() {
     </Pressable>
   );
   return (
-    <View style={styles.mainBlock}>
-      {images.length > 0 ?
+    <View style={styles.mainBlock}>     
         <FlatList
           data={images}
           numColumns={2}
           keyExtractor={item => item.id}
           renderItem={({ item, index }) => <Item item={item} index={index} />}
-        /> : null}
-
+        />
       <ImageView
         images={SavePath(images)}
         backgroundColor='#fff'
@@ -89,15 +111,20 @@ function Patch() {
           )
         }
         }
-        FooterComponent={({ imageindex }) =>
-          <Ionicons style={styles.trash} name="trash" size={50} color="green" />
-
+        FooterComponent={({ imageIndex }) =>
+          <Ionicons 
+            onPress={()=>DeletePath(images[imageIndex])} 
+            style={styles.trash} 
+            name="trash" 
+            size={50} 
+            color="green" 
+          />
         }
       />
     </View>
   );
 };
-export default Patch;
+
 const styles = StyleSheet.create({
   mainBlock: {
     paddingTop: 10,
@@ -115,7 +142,8 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   headerText: {
-    fontSize: 22
+    fontSize: 22,
+    color: 'blue'
   },
   imageText: {
     fontSize: 17,

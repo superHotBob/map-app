@@ -13,7 +13,8 @@ export const pathSlice = createSlice({
   name: 'track', 
   initialState: initialState, 
   reducers: {    
-    addpoint: (state, action) => {      
+    addpoint: (state, action) => {  
+      console.log('to nodes',action.payload);    
       state.nodes = [...state.nodes, action.payload]      
     },
     setname: (state, action) => {      

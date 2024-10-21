@@ -112,6 +112,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         borderRadius: 28,
         width: 120,
-       textTransform: 'uppercase'
+        letterSpacing: 1.3,
+        textTransform: 'uppercase'
     }
 });

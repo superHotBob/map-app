@@ -10,14 +10,15 @@ type Props = {
     album: string,
     photo_count: number,
     speed: number,
-    distance: number
+    distance: number,
+    album_id: string
 }
 
 export async function ToDBwriteWalk(props:Props) {
     const db = await SQLite.openDatabaseAsync('tracker', {
         useNewConnection: true
     });
-    await MediaLibrary.addAssetsToAlbumAsync([props.id], props.album, false);
+    await MediaLibrary.addAssetsToAlbumAsync([props.id], props.album_id, false);
     
         
         await db.runAsync(`INSERT INTO paths (name, begintime, endtime, images, path, type) 
@@ -31,7 +32,7 @@ export async function ToDBwriteWalk(props:Props) {
                 props.type
             ]
         );
-        console.log('Write to paths table');
+        
 };
 export async function ToDBwriteRun(props:Props) {
     const db = await SQLite.openDatabaseAsync('tracker', {
@@ -56,7 +57,7 @@ export function SecondsToTime(i) {
     const hours = (time/3600).toFixed(0);       
     const mins = Math.trunc((time - hours*3600)/60);
     const sec = time - hours*3600 - mins*60;       
-    return ( hours + ' : ' + (mins < 10 ? '0' + mins : mins) + ' : ' + 
+    return ( hours + ' : ' + (mins < 10 ? mins : mins) + ' : ' + 
     (+sec.toFixed(0) < 10 ? '0' + sec.toFixed(0) : sec.toFixed(0) )); 
 }
 export function Duration(a,b) {  
@@ -64,6 +65,6 @@ export function Duration(a,b) {
     const hours = (time/3600).toFixed(0);       
     const mins = Math.trunc((time - hours*3600)/60);
     const sec = time - hours*3600 - mins*60;       
-    return ( hours + ' h ' + (mins < 10 ? '0' + mins : mins) + ' min ' + 
+    return ( hours + ' h ' + (mins < 10 ?  mins : mins) + ' min ' + 
     (+sec.toFixed(0) < 10 ? '0' + sec.toFixed(0) : sec.toFixed(0) )); 
 }
