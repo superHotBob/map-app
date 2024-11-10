@@ -1,24 +1,25 @@
 import { StyleSheet, View, Dimensions, Alert, Text, TouchableHighlight, StatusBar } from 'react-native';
-import { useEffect, useState, useRef,  Key } from 'react';
-import MapView, { Circle, Marker, Polyline } from 'react-native-maps';
+import { useEffect, useState, useRef, Key } from 'react';
+import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
+import * as FileSystem from 'expo-file-system';
 import getDistance from 'geolib/es/getDistance';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import * as MediaLibrary from 'expo-media-library';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSelector, useDispatch } from 'react-redux';
-import { addpoint, deletepoint, setname } from '@/reduser';
+import {addpoint, deletepoint, setname } from '@/reduser';
 import { captureRef } from 'react-native-view-shot';
 import RunBlock from '@/components/runblock';
-import { ToDBwriteWalk, SecondsToTime, ToDBwriteRun } from '@/hooks/useDB';
+import { ToDBwriteWalk, SecondsToTime, ToDBwriteRun, CreateDB } from '@/hooks/useDB';
+import { GetCoordinate } from '@/scripts/functions';
 const { height, width } = Dimensions.get('window');
 
 const Map = () => {
   const refzoom = useRef();
   const timeRef = useRef<number>(0);
-  const router = useRouter();
   const dispatch = useDispatch();
   const [status, requestPermission] = MediaLibrary.usePermissions();
   const [startStop, setStartStop] = useState(true);
@@ -27,105 +28,91 @@ const Map = () => {
   const [typeMap, settypeMap] = useState<string>('standard');
   const [zoom, setZoom] = useState(12);
   const [heightBlock, setHeightBlock] = useState(height);
-  const [speed, setSpeed] = useState(0);
-  const { nodes, name, type, time } = useSelector((state) => state.track);
+  const [speed, setSpeed] = useState(1);
+  const [calories, setCalories] = useState(0);
+
+
+  const { nodes, type, name, time } = useSelector((state) => state.track);
 
   useEffect(() => {
     if (nodes.length === 1) {
-      timeRef.current = Date.now();      
+      timeRef.current = Date.now();
       setStartStop(true);
+      setDistance(0);
+      setPath(0);
     }
-  }, [name]);
+  }, []);
 
   const GetLocations = async (i: { coordinate: { timestamp: number, latitude: number, longitude: number, speed: number } }) => {
-    console.log('getgeolocation');
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('Permission to access location was denied');
-      return;
-    };
-    if ((i.coordinate.timestamp - timeRef.current) < (time * 60000 - 10000)) {      
-      return;
-    };
-    const new_longitude = (i.coordinate.longitude + (0.01 - Math.random() / 50)).toFixed(7);
-    const new_latitude = (i.coordinate.latitude + (0.01 - Math.random() / 50)).toFixed(7)
+    
+    if(!startStop) return;
+    
+    if (i.coordinate.timestamp - timeRef.current < 30000*nodes.length-10000) return;
+    
+    const {coords} = await Location.getCurrentPositionAsync({timeInterval: 30000 , accuracy: 5});    
+    const x =  0.001 - Math.random()/500; 
+    const point = {
+        longitude: coords.longitude + 0.001 - Math.random()/500,
+        latitude: coords.latitude + 0.001 - Math.random()/500,
+        type: type
+    };   
+    dispatch(addpoint(point));
+    
     if (type === 'running') {
-      const point = {
-        longitude: nodes.length === 0 ? i.coordinate.longitude :
-          nodes.at(-1).longitude + Math.random() / 50,
-        latitude: i.coordinate.latitude,
-        type: type
-      };
-      dispatch(addpoint(point))
-      setSpeed(i.coordinate.speed + Math.random() * 10);
-      GetDistance(point);
-    } else {
-      const point = {
-        longitude: Number(new_longitude),
-        latitude: Number(new_latitude),
-        type: type
-      };
-      dispatch(addpoint(point))
-      GetDistance(point);
+      setSpeed(coords.speed + Math.random() * 10);
     }
+    GetDistance(point);
   };
+
   const Save = () => {
     Alert.alert('Сохранить путь',
       name + ', \n' + 'time: ' + SecondsToTime(timeRef.current) + ',' + ' \n' + 'path: ' + path + ' m.',
       [
         {
-          text: 'НЕТ',
+          text: 'NO',
           onPress: () => console.log('Cancel Pressed'),
           style: 'cancel',
         },
-        { text: 'ДА', onPress: () => SavePath() },
+        { text: 'YES', onPress: () => SavePath() },
       ]
     );
   };
   const SavePath = async () => {
-    try {
-      const localUri = await captureRef(refzoom, {
-        fileName: name + '_',
-        format: 'jpg',
-        height: height - 225,
-        width: width,
-        quality: 1,
-      });
-      const { id } = await MediaLibrary.createAssetAsync(localUri);
-      const album_id = await AsyncStorage.getItem('album');
-
-      const photo_count = nodes.filter((i: { type: string; }) => i.type === 'photo').length;
-      if (!album_id) {
-        const new_album = await MediaLibrary.createAlbumAsync("tracker", id);
-        await AsyncStorage.setItem('album', new_album.id.toString());
-        await MediaLibrary.addAssetsToAlbumAsync([id], new_album.id.toString(), false);
-        const album_id = new_album;
-        ToDBwriteWalk({ name, timeRef, photo_count, path, type, album_id, id });
-        if (type === 'running') {
-          ToDBwriteRun({ name, speed, distance, timeRef, album_id, id });
-        };
-
-      } else {
-        if (type === 'walking' ) {
-          ToDBwriteWalk({ name, timeRef, photo_count, path, type, album_id, id });
-        } else {
-          let path = distance;
-          ToDBwriteWalk({ name, timeRef, photo_count, path, type, album_id, id });
-          ToDBwriteRun({ name, speed, distance, timeRef });
-        }      
-      }     
+    const localUri = await captureRef(refzoom, {
+      fileName: name.trimEnd() + '_',
+      format: 'jpg',
+      height: height - 225,
+      width: width,
+      quality: 1,
+    });    
+    const directoryUri = `${FileSystem.documentDirectory}${'images'}`;
+    let { exists } = await FileSystem.getInfoAsync(directoryUri);
+    if( exists ) {
+      await FileSystem.moveAsync({from: localUri, to: directoryUri +'/' + name + '.jpg'})
+    } else {
+      CreateDB();
+      await FileSystem.makeDirectoryAsync(directoryUri,{intermediates: true});
+      await FileSystem.moveAsync({from: localUri, to: directoryUri +'/' + name + '.jpg'})
+    };   
+    const photo_count = nodes.filter((i: { type: string }) => i.type === 'photo').length;   
+   
+    if (type === 'walking') {
+      await ToDBwriteWalk(name, timeRef, photo_count, path, type);
       DeletePath();
-    } catch (e) {
-      console.log(e);
-    }
+    } else {
+      let path = distance;
+      await ToDBwriteWalk(name, timeRef, photo_count, path, type);
+      ToDBwriteRun(name, speed, distance, timeRef, calories);
+      DeletePath();
+    }   
   };
 
-  const DeletePath = () => {
-    dispatch(deletepoint([]));
-    setDistance(0);
-    setPath(0);
-    router.push('/');
+  function DeletePath() {
+    router.dismissAll();
+    dispatch(deletepoint());
+    dispatch(setname(''));    
   };
+
   type loc = { latitude: number, longitude: number }
 
   function GetDistance(item: loc) {
@@ -138,8 +125,7 @@ const Map = () => {
       setPath(distance)
     } else {
       GetPath();
-    }
-
+    };
   };
 
   function Distance(a: loc, b: loc): number {
@@ -155,7 +141,7 @@ const Map = () => {
       acu + Distance(curr, nodes[index + 1]), 0)
     setPath(path)
   };
- 
+
 
 
 
@@ -192,17 +178,19 @@ const Map = () => {
         ref={refzoom}
         mapType={typeMap}
         showsUserLocation={startStop}
-        userLocationPriority='low'
+        userLocationPriority='high'
+        
         followsUserLocation={true}
+        provider={PROVIDER_GOOGLE}
         onUserLocationChange={(e) => GetLocations(e.nativeEvent)}
-        userLocationFastestInterval={time * 60000}
+        userLocationFastestInterval={30000}
         style={[styles.map, { height: height - 225 }]}
         onPress={() => setHeightBlock(height - 45)}
         region={{
-          latitude: nodes[0]?.latitude,
-          longitude: nodes[0]?.longitude,
-          latitudeDelta: 0.02,
-          longitudeDelta: 0.02,
+          latitude: nodes[0].latitude,
+          longitude: nodes[0].longitude,
+          latitudeDelta: 0.003,
+          longitudeDelta: 0.003,
         }}
       >
         <Polyline
@@ -216,8 +204,8 @@ const Map = () => {
               latitude: i.latitude,
               longitude: i.longitude
             }}
-            calloutOffset={{ x: -15, y: -15 }}
-            image={require('../../assets/images/camera.png')}
+            calloutOffset={{ x: -15, y: -15 }}           
+            icon={require('../../assets/images/camera.png')}
           />
           :
           <Circle key={index}
@@ -225,10 +213,10 @@ const Map = () => {
               latitude: i.latitude,
               longitude: i.longitude
             }}
-            radius={index === 0 ? (50 * 2.5) / zoom : (index === nodes.length - 1) ? (50 * 2.5) / zoom : 0}
+            radius={index === 0 ? 20 / zoom : (index === nodes.length - 1) ? 20 / zoom : 0}
             fillColor={index === 0 ? 'red' : (index === nodes.length - 1) ? '#fff' : 'gold'}
             strokeColor='yellow'
-            strokeWidth={2}
+            strokeWidth={3}
           />
         )}
 
@@ -255,6 +243,7 @@ const Map = () => {
       <View style={[styles.btnContainer, styles.btnStartStop, { gap: 10 }]}>
         {startStop ? (
           <TouchableHighlight
+            activeOpacity={0.8}
             style={[styles.btnStop, { width: '100%' }]}
             onPress={() => setStartStop(false)}
           >
@@ -265,6 +254,7 @@ const Map = () => {
             <TouchableHighlight
               style={styles.btnStop}
               onPress={Save}
+
             >
               <Text style={[styles.btnText, { backgroundColor: 'maroon' }]}>
                 Save
@@ -273,6 +263,7 @@ const Map = () => {
             <TouchableHighlight
               style={[styles.btnStop, { backgroundColor: 'red', alignItems: 'center', justifyContent: 'center' }]}
               onPress={DeletePath}
+
             >
               <Ionicons
                 name="trash"
@@ -281,6 +272,7 @@ const Map = () => {
               />
             </TouchableHighlight>
             <TouchableHighlight
+
               style={styles.btnStop}
               onPress={() => setStartStop(true)}
             >

@@ -7,118 +7,132 @@ import {
   View,
   Dimensions
 } from "react-native";
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useCallback, useState } from "react";
 import { router, useFocusEffect } from 'expo-router';
-import { Path_date } from "@/scripts/functions";
-import * as MediaLibrary from 'expo-media-library';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import ImageView from "react-native-image-viewing";
 import { Ionicons } from "@expo/vector-icons";
 import * as SQLite from 'expo-sqlite';
+import { DeletePath } from "@/scripts/functions";
 const width_window = Dimensions.get('window').width;
+const { height } = Dimensions.get('window');
 
-const GetNamePath = (a: string) => a.split('_')[0];
 
-export default function Patch() {
-  const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
+export default function Patch() { 
   const [images, setImages] = useState([]);
   const [visible, setIsVisible] = useState(false);
   const [imageindex, setImageIndex] = useState(0);
+  const directoryUri = `${FileSystem.documentDirectory}${'images'}`;
 
   useFocusEffect(useCallback(() => {
     GetPaths();
-    setIsVisible(false);
+    setIsVisible(false);    
   }, []));
-  async function GetPaths() {
-    if (permissionResponse?.status !== 'granted') {
-      await requestPermission();
-    }
-    const id = await AsyncStorage.getItem('album');
-    const { assets } = await MediaLibrary.getAssetsAsync({ album: id });   
-    setImages(assets);
-    
+
+  async function GetPaths() {    
+    let images = await FileSystem.readDirectoryAsync(directoryUri);
+    let filtr = images.filter(i=>i.includes('.jpg'));        
+    setImages(filtr);
   };
-  async function DeletePath(i:string) {
-    await MediaLibrary.deleteAssetsAsync([i.id]);
+
+  async function DeleteMyPath(i: string) { 
+    const path =  i.replace('.jpg','');
+    DeletePath(path);
     setIsVisible(false);
     GetPaths();
   };
 
+  async function SharePath(i:  string) {   
+   await Sharing.shareAsync(directoryUri + '/' + i, {})
+  };
 
-  function SavePath(i: { uri: string }) {
-    return images.map(i => Object.assign({}, { uri: i.uri }))
+  function GetName(i:string) {
+    return i.split('.')[0]
   }
-  async function GoToStatistic(i:string) {
-    const name =  i.split('_')[0]
+
+  function SavePath(i: { uri: string }) {    
+    return images.map(i => Object.assign({}, { uri: directoryUri +'/' + i, name: i }))
+  }
+  async function GoToStatistic(i: string) {
+    const name = i.split('.')[0]
     const db = await SQLite.openDatabaseAsync('tracker', {
       useNewConnection: true
     });
-    const path = await db.getAllAsync(`SELECT * FROM paths where name = ?`,[name]); 
-            
-   
- 
-      router.push({
-          pathname: '/path',
-          params:  {
-              start: path[0].begintime,
-              end: path[0].endtime,
-              type:path[0].type,
-              name: path[0].name,
-              id: path[0].id,
-              path: path[0].path
-          }
-      })
+    const path = await db.getAllAsync(`SELECT * FROM paths where name = ?`, [name]);
+    router.push({
+      pathname: '/path',
+      params: {
+        start: path[0].begintime,
+        end: path[0].endtime,
+        type: path[0].type,
+        name: path[0].name,
+        id: path[0].id,
+        path: path[0].path
+      }
+    })
   };
-   
-  
+
+
 
 
   function SetIsVisible(index: number) {
     setImageIndex(index);
     setIsVisible(true);
   }
-  const Item = ({ item, index }: { index: number, item: {uri: string, modificationTime: number} }) => (
+  const Item = ({ item, index }: { index: number, item:  string }) => (
     <Pressable style={styles.imageTextPress} onPress={() => SetIsVisible(index)}>
       <Image
-        style={{ width: (width_window / 2) - 15, height: ((width_window / 2) - 10) * (item.height / item.width) }}
-        source={{ uri: item.uri }}
+        style={{ width: (width_window / 2) - 15, height: ((width_window / 2) - 10)*((height - 225)/width_window )  }}
+        source={{ uri: directoryUri +'/' + item}}
       />
-      <Text style={styles.imageText}>{Path_date(item.modificationTime)}</Text>
+      {/* <Text style={styles.imageText}>{Path_date(item.modificationTime, 'ru-RU')}</Text> */}
     </Pressable>
   );
   return (
-    <View style={styles.mainBlock}>     
-        <FlatList
-          data={images}
-          numColumns={2}
-          keyExtractor={item => item.id}
-          renderItem={({ item, index }) => <Item item={item} index={index} />}
-        />
+    <View style={styles.mainBlock}>
+      <FlatList
+        data={images}
+        numColumns={2}
+        ListEmptyComponent={() => <Text style={styles.empty}>NO PATHS</Text>}
+        keyExtractor={item => item}
+        renderItem={({ item, index }) => <Item item={item} index={index} />}
+      />
       <ImageView
         images={SavePath(images)}
         backgroundColor='#fff'
         imageIndex={imageindex}
-        presentationStyle='formSheet'
+        presentationStyle='pageSheet'
         visible={visible}
         onRequestClose={() => setIsVisible(false)}
         HeaderComponent={({ imageIndex }) => {
           return (
             <View style={styles.headerBlock}>
               <Ionicons onPress={() => setIsVisible(false)} name="arrow-back-sharp" color="blue" size={25} />
-              <Text style={styles.headerText}>{GetNamePath(images[imageIndex].filename)}</Text>
-              <Ionicons onPress={() => GoToStatistic(images[imageIndex].filename)} name="stats-chart" size={35} color="blue" />
+              <Text style={styles.headerText}>{GetName(images[imageIndex])}</Text>
+              <Ionicons onPress={() => GoToStatistic(images[imageIndex])} name="stats-chart" size={35} color="blue" />
             </View>
           )
         }
         }
         FooterComponent={({ imageIndex }) =>
-          <Ionicons 
-            onPress={()=>DeletePath(images[imageIndex])} 
-            style={styles.trash} 
-            name="trash" 
-            size={50} 
-            color="green" 
-          />
+          <View style={styles.icons}>
+             <Ionicons
+              onPress={() => DeletePath(images[imageIndex])}
+              style={styles.trash}
+              name="trash"
+              size={50}
+              color="green"
+            />
+            <Ionicons
+              onPress={() => SharePath(images[imageIndex])}
+              style={styles.trash}
+              name="share"
+              size={50}
+              color="#ff7fff"
+            />
+          </View>
+
         }
       />
     </View>
@@ -143,7 +157,7 @@ const styles = StyleSheet.create({
   },
   headerText: {
     fontSize: 22,
-    color: 'blue'
+    color: '#ff7fff'
   },
   imageText: {
     fontSize: 17,
@@ -154,16 +168,25 @@ const styles = StyleSheet.create({
   },
   imageTextPress: {
     backgroundColor: '#ddd',
-    //   borderRadius: 8,
     marginBottom: 9,
     marginRight: 10
   },
+  empty: {
+    flex: 1,
+    fontSize: 30,
+    marginTop: 100,
+    alignSelf: 'center',
+    justifyContent: 'space-between'
+  },
   btnDelete: {
     width: '100%',
-
     marginHorizontal: 'auto',
     marginBottom: 25,
     height: 50,
+  },
+  icons: {
+    flexDirection: 'row',
+    justifyContent: 'center'
   },
   trash: {
     margin: 'auto',

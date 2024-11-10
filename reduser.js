@@ -4,7 +4,7 @@ const initialState = {
   nodes: [],
   name: '',
   type: '',
-  time: 0.5,
+  time: 30000,
   weight: 70,
   braslet: false
 };
@@ -13,8 +13,7 @@ export const pathSlice = createSlice({
   name: 'track', 
   initialState: initialState, 
   reducers: {    
-    addpoint: (state, action) => {  
-      console.log('to nodes',action.payload);    
+    addpoint: (state, action) => {            
       state.nodes = [...state.nodes, action.payload]      
     },
     setname: (state, action) => {      
@@ -29,9 +28,11 @@ export const pathSlice = createSlice({
     settype: (state, action) => {      
       state.type = action.payload;
      },
-    deletepoint: (state, action) => {      
-      state.nodes = [];
-      state.name = '';
+    deletepoint: (state) => {         
+      return {
+        ...state,
+        nodes: [],
+      };      
     },
     setbraslet: (state, action) => {
       state.braslet = !state.braslet

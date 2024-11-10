@@ -4,39 +4,36 @@ import {
 } from "react-native";
 import { useFonts } from 'expo-font';
 import { useState } from "react";
-import { useDispatch,useSelector } from "react-redux";
-import { setname, addpoint, settime, settype } from "@/reduser";
+import { useDispatch } from "react-redux";
+import { setname, addpoint, settype } from "@/reduser";
 import * as Location from 'expo-location';
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
 
 function Enter() {
+    const router = useRouter();
+    const dispatch = useDispatch();  
     const [typemove, setTypeMove ] = useState('walking');
-    const [name, setName] = useState('')
-    const dispatch = useDispatch();   
-    const [loaded, error] = useFonts({
+    const [name, setName] = useState('');     
+    const [] = useFonts({
         'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),        
     });
     const StartPath = async () => {
         let { status } = await Location.requestForegroundPermissionsAsync();
-
-        if (status !== 'granted') {
-            console.log('Permission to access location was denied');
+        if (status !== 'granted') {            
             return;
         };
-        const {coords} = await Location.getCurrentPositionAsync({});
+        const {coords} = await Location.getCurrentPositionAsync({accuracy: 5});
        
         const first_point = {
             longitude: coords.longitude ,
             latitude: coords.latitude ,
             type: typemove
-        };
-        const interval = await AsyncStorage.getItem('time');
-        dispatch(settime(interval));
+        };       
         dispatch(addpoint(first_point));
-        dispatch(setname(name));  
+        dispatch(setname(name.trimEnd()));  
         dispatch(settype(typemove));
-        router.push('/(tabs)/map')     
+        router.push('/(tabs)/map');
+        setName('');           
     };
     
     return (
@@ -45,18 +42,15 @@ function Enter() {
             <View style={styles.selector}>                
                 <Text 
                     onPress={()=>setTypeMove('walking')} 
-                    style={[
-                        styles.btnText,
+                    style={[styles.btnText,
                         {backgroundColor: typemove === 'walking' ? 'green' : '#ddd'}]}
                 >WALK</Text>
                 <Text 
-                onPress={()=>setTypeMove('running')} 
-                style={[
-                    styles.btnText,
+                    onPress={()=>setTypeMove('running')} 
+                    style={[styles.btnText,
                     {backgroundColor: typemove === 'running' ? 'green' : '#ddd'}]}
                 >RUN</Text>
-            </View>
-            
+            </View>            
             <Text style={{fontFamily: 'SpaceMono', fontSize: 22 }}>Enter path name</Text>
             <TextInput
                 style={styles.input}
@@ -101,6 +95,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',        
         gap: 16,
+        backgroundColor: '#fff'
     },
     btnText: {
         fontSize: 25,

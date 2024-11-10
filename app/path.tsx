@@ -1,65 +1,67 @@
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, ImageBackground, Pressable, StatusBar, Button } from 'react-native';
+import { View, Text, StyleSheet, 
+    Dimensions, TouchableOpacity, 
+    ScrollView, ImageBackground, 
+    Pressable, StatusBar, Button, Image 
+} from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as MediaLibrary from 'expo-media-library';
 import { useState,  useCallback } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SQLite from 'expo-sqlite';
+import * as FileSystem from 'expo-file-system';
 import Toast from 'react-native-toast-message';
 import { useFonts } from 'expo-font';
-import { Path_date } from '../scripts/functions';
+import { DeletePath, Path_date } from '../scripts/functions';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { Duration } from '@/hooks/useDB';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Colors } from '@/constants/Colors';
 
 
 const { width, height } = Dimensions.get('window');
-
+const color = Colors.light.tint;
 interface thisPath {
     speed: number,
     calories: number
 }
 const Carusel = () => {   
     const [result, setResult] = useState(false);
-    const [assets, setAssets] = useState<Array<{ id: string, uri: string }>>([]);
+    const [assets, setAssets] = useState<Array<{ratio: number, id: string, uri: string }>>([]);
     const [idImage, setIdImage] = useState(false);
     const [thispath, setThisPath] = useState<thisPath>({speed: 0,calories: 0})
-    const [loaded, error] = useFonts({
+    const [] = useFonts({
         'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
-      });
-
-    const { date = Date.now(), } = useLocalSearchParams();
-   
-
+    });
 
     const { type, start, end, name, id: id_path, path } = useLocalSearchParams();
+    const directoryUri = `${FileSystem.documentDirectory}${'images'}${'/'}${name}`;  
 
     useFocusEffect(
         useCallback(() => {
-            async function GetAssets() {
-                const id = await AsyncStorage.getItem('photo');
-                const { assets } = await MediaLibrary.getAssetsAsync({ album: id });
-                const new_assets = assets.filter(i => i.modificationTime > +start && i.modificationTime < +end)
-                setAssets([...new_assets]);
+            async function GetAssets() {                 
+                let { exists } = await FileSystem.getInfoAsync(directoryUri);
+                if ( exists ) {
+                    let images = await FileSystem.readDirectoryAsync(directoryUri);
+                    let new_assets = images.map(i => Object.assign({}, { uri: directoryUri +'/' + i , ratio: +i.charAt(0) === 4 ? 1.33 : 1}))
+                    setAssets([...new_assets]);                    
+                } else {
+                    setAssets([]);
+                };               
                 if (type === 'running') {
                     const db = await SQLite.openDatabaseAsync('tracker', {
                         useNewConnection: true
                     });
-                    const path = await db.getAllAsync(`select * from run where name = ?`, [name]);
+                    const path = await db.getAllAsync('SELECT * FROM run WHERE name =  ? ' , name );
+                    
                     setThisPath(path[0]);
                     
-                }
+                };
             };
             GetAssets();
         }, [])
     );
 
-    async function DeletePath() {
-        const db = await SQLite.openDatabaseAsync('tracker', {
-            useNewConnection: true
-        });
-        await db.runAsync(`delete from paths where id = ${id_path}`);
-        const ids = assets.map(i => i.id);
-        await MediaLibrary.deleteAssetsAsync(ids);
+    async function DeleteMyPath() {
+        DeletePath(name);   
         Toast.hide();
         router.back();
     };
@@ -75,7 +77,7 @@ const Carusel = () => {
         tomatoToast: ({ text1 }) => (
             <View style={[styles.messages, { width: '95%', backgroundColor: '#ccc' }]}>
                 <Text style={styles.messageText}>{text1}</Text>
-                <Button title="YES" onPress={DeletePath} />
+                <Button title="YES" onPress={DeleteMyPath} />
                 <Button title="NO" onPress={() => Toast.hide()} />
             </View>
         )
@@ -92,18 +94,19 @@ const Carusel = () => {
         <View style={styles.mainBlock}>
             <StatusBar barStyle="dark-content" />
             <View style={styles.header}>
-                <Ionicons onPress={() => router.back()} name="arrow-back" color="blue" size={23} />
+                <Ionicons onPress={() => router.back()} name="arrow-back" color={color} size={25} />
                 <Text style={styles.name}>{name}</Text>
-                <FontAwesome onPress={showToast} name="trash-o" color="blue" size={25} />
+                <FontAwesome onPress={showToast} name="trash-o" color={color} size={25} />
             </View>
             <Text style={styles.data}><Text style={styles.keys}>Type:</Text> {type}</Text>
-            <Text style={styles.data}><Text style={styles.keys}>Date:</Text> {Path_date(date)}</Text>
+            <Text style={styles.data}><Text style={styles.keys}>Date:</Text> {Path_date(start,'ru-RU')}</Text>
             <Text style={styles.data}><Text style={styles.keys}>Duration:</Text> {Duration(start, end)} sec</Text>
             <Text style={styles.data}>Distance: {path} m</Text>
-            {type === 'running' ?
-                <View>
+            {thispath.speed > 0 ?
+                <View style={{width: '100%'}}>
                     <Text style={styles.data}><Text style={styles.keys}>Speed:</Text> {thispath['speed']} km/h</Text>
                     <Text style={styles.data}><Text style={styles.keys}>Calories:</Text> {thispath['calories']}</Text>
+                    <Image  width={width} height={height - 200} source={{uri: directoryUri + '.jpg' }} />
                     
                 </View>
                 :
@@ -111,12 +114,12 @@ const Carusel = () => {
                     <View style={styles.imagesBlock}>
                         {assets.map(i =>
                             <Pressable
-                                key={i.id}
-                                onPress={() => GetIdImage(i.id)}
+                                key={i.uri}
+                                // onPress={() => GetIdImage(i.id)}
                                 style={[styles.image, { opacity: result ? 0.3 : 1 }]}
                             >
                                 <ImageBackground
-                                    style={[styles.image, { width: +width, height: width * (i.height / i.width), opacity: result ? 0.3 : 1 }]}
+                                    style={[styles.image, { width: +width, height: width*i.ratio , opacity: result ? 0.3 : 1 }]}
                                     source={{ uri: i.uri }}
                                     resizeMode='cover'
                                 >
@@ -153,23 +156,25 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
         backgroundColor: '#fff',
         width: '100%',
-        marginTop: StatusBar.currentHeight
+        marginTop: StatusBar.currentHeight 
     },
     header: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        justifyContent: 'space-between',        
+        alignItems: 'flex-end',        
         height: 60,
         width: '100%',
-        borderBottomWidth: 1,
+        borderWidth: 1,
+        paddingBottom: 15,
         paddingHorizontal: 12,
         borderColor: '#ddd'
     },
     name: {
         fontSize: 22,
-        color: 'blue',
+        color: color,
+        fontWeight: 'bold',
         fontFamily: 'SpaceMono',
-
+        verticalAlign: 'middle'
     },
     messages: {
         padding: 20,
@@ -201,7 +206,8 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontFamily: 'SpaceMono',
         letterSpacing: 0.08,
-        
+        width: '100%',
+        textAlign: 'center'
     },
     keys: {
         fontWeight: 'bold',

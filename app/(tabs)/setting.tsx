@@ -7,6 +7,7 @@ import { Colors } from "@/constants/Colors";
 import { useDispatch, useSelector } from "react-redux";
 import { setbraslet, settime, setweight } from "@/reduser";
 import { useFonts } from "expo-font";
+import { Link } from "expo-router";
 const color = Colors.light.background;
 
 const Setting = () => {
@@ -19,9 +20,11 @@ const Setting = () => {
         'SpaceMono': require('../../assets/fonts/SpaceMono-Regular.ttf'),
     });
     useEffect(() => {
-        async function ReadStorage() {
+        async function ReadStorage() {            
             const time = await AsyncStorage.getItem('time');
             const weight = await AsyncStorage.getItem("weight");
+            if(time === null) return;
+
             dispatch(settime(Number(time)));
             dispatch(setweight(Number(weight)));            
         };
@@ -44,11 +47,11 @@ const Setting = () => {
                 <Text style={styles.timeText} >Time step (min)</Text>
                 <View style={{ alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
                     <LinearGradient style={styles.plusBtn} colors={color}>
-                        <Ionicons onPress={() => dispatch(settime(time === 0.5 ? 0.5 : time - 0.5))} name="remove-sharp" size={35} color="#fff" />
+                        <Ionicons onPress={() => dispatch(settime(time === 30000 ? 30000 : time - 30000))} name="remove-sharp" size={35} color="#fff" />
                     </LinearGradient>
-                    <Text style={[styles.timeText, { width: 50 }]}>{time}</Text>
+                    <Text style={[styles.timeText, { width: 50 }]}>{(time/60000).toFixed(1)}</Text>
                     <LinearGradient style={styles.plusBtn} colors={color}>
-                        <Ionicons onPress={() => dispatch(settime(time + 0.5))} name="add" size={35} color="#fff" />
+                        <Ionicons onPress={() => dispatch(settime(time + 30000))} name="add" size={35} color="#fff" />
                     </LinearGradient>
                 </View>
             </View>
@@ -75,9 +78,12 @@ const Setting = () => {
                     value={braslet}
                 />
             </View>
+            <LinearGradient style={[styles.plusBtn,{width: 300}]} colors={color}>
+                <Link href='/background' style={styles.link}>SET BACKGROUND IMAGE</Link>
+            </LinearGradient>
             <TouchableHighlight
                 activeOpacity={0.6}               
-                underlayColor="#DDDDDD"
+                underlayColor="#dddddd"
                 onPress={storeData}
             >
             <Ionicons style={styles.saveBtn}  name="save" size={65} color="#4c669f" />
@@ -131,7 +137,14 @@ const styles = StyleSheet.create({
         height: 50,
         borderRadius: 50,
         alignItems: 'center',
-        width: 100,
+        width: 120,
         justifyContent: 'center'
+    },
+    link: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: 'bold',
+        letterSpacing: 1.2,
+
     }
 });

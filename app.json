@@ -4,13 +4,13 @@
     "slug": "tracker",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/adaptive-icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/images/adaptive-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#90D5FF"
+      "backgroundColor": "#ff6347"
     },
     "ios": {
       "supportsTablet": true
@@ -18,18 +18,23 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#90D5FF"
+        "backgroundColor": "#000000"
       },
       "permissions": [
+        "android.permission.SCHEDULE_EXACT_ALARM",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.ACCESS_MEDIA_LOCATION"
       ],
-      "package": "com.bobozeranski.tracker"
+      "package": "com.bobozeranski.tracker",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCx2e0Y7KUTi4k7-mog8ARc6DlAH-OiK6A"
+        }
+      }
     },
     "web": {
       "bundler": "metro",

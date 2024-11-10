@@ -5,14 +5,18 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import {  Alert } from 'react-native';
-// import 'react-native-reanimated';
+import {  Alert, useColorScheme } from 'react-native';
+import { Colors } from '@/constants/Colors';
+
 
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
-// SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() { 
+  const sheme = useColorScheme();
+  
+  const color = Colors[sheme];  
   const [loaded, error] = useFonts({
     'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -46,11 +50,11 @@ export default function RootLayout() {
       },
     );
     const styleHeader = {
-      color: 'blue',
+      color: color.tint,
       fontSize: 22, 
       fontFamily: 'SpaceMono',
       fontWeight: 'bold'
-    }
+    };
     
   return (
     <Provider store={store}>
@@ -59,19 +63,31 @@ export default function RootLayout() {
         <Stack.Screen 
           name="path" 
           options={{
-            headerTintColor: 'blue', 
+            headerTintColor: color.tint, 
             headerTitleAlign: 'center', 
             title: 'Photos', 
-            headerTitleStyle:styleHeader,  
+            headerTitleStyle:  styleHeader ,  
             headerShown: false
           }} 
         />
         <Stack.Screen 
           name="statistic" 
           options={{
-            headerTintColor: 'blue',            
+            headerTintColor: color.tint,            
             headerTitleAlign: 'center', 
             title: 'Statistic', 
+            headerLargeTitle: true,
+            headerTitleStyle: styleHeader,  
+            headerShown: true
+          }} 
+        />
+        <Stack.Screen 
+          name="background" 
+          options={{
+            headerTintColor: color.tint,            
+            headerTitleAlign: 'center', 
+            title: 'Select background', 
+            headerLargeTitle: true,
             headerTitleStyle: styleHeader,  
             headerShown: true
           }} 
@@ -79,20 +95,21 @@ export default function RootLayout() {
          <Stack.Screen 
           name="paths" 
           options={{
-            headerTintColor: 'blue', 
+            headerTintColor: color.tint, 
             headerTitleAlign: 'center', 
             title: 'My paths', 
             headerTitleStyle: styleHeader,  
             headerShown: true
           }} 
-        /> 
+        />
+       
          <Stack.Screen 
-          name="enter" 
+          name="start" 
           options={{
-            headerTintColor: 'blue', 
+            headerTintColor: color.tint, 
             headerTitleAlign: 'center', 
             title: 'Begin path', 
-            headerTitleStyle:styleHeader,  
+            headerTitleStyle: styleHeader,  
             headerShown: true
           }} 
         />   

@@ -4,7 +4,7 @@ import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { useSelector } from 'react-redux';
 
 export default function TabLayout() {
-  const { name } = useSelector(state => state.track)
+  const { name } = useSelector(state => state.track);  
   return (
     <Tabs screenOptions={{headerShown: false}}>
       <Tabs.Screen
@@ -16,8 +16,7 @@ export default function TabLayout() {
             <TabBarIcon name={focused ? 'home' : 'home-outline'} color='#192f6a' />
           ),
         }}
-      />
-       
+      />       
       <Tabs.Screen
         name = "map"               
         options={{  
@@ -31,7 +30,8 @@ export default function TabLayout() {
       />
        <Tabs.Screen
         name="camera"
-        options={{          
+        options={{  
+          href: name.length > 0 ? '/(tabs)/camera' : null  ,        
           tabBarShowLabel: false,
           tabBarActiveBackgroundColor: '#ddd',
           tabBarIcon: ({ focused }) => (

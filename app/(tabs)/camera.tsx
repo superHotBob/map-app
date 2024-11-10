@@ -1,7 +1,6 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Button, StyleSheet, Text, View, Dimensions, StatusBar } from 'react-native';
-
 const { width } = Dimensions.get('window');
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,14 +8,15 @@ import { Colors } from '@/constants/Colors';
 import { useDispatch, useSelector } from 'react-redux';
 import { addpoint } from '@/reduser';
 import * as Location from 'expo-location';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Add_photo } from '@/scripts/functions';
-
+import { router } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
+import { CreateDB } from '@/hooks/useDB';
 const background = Colors.light.background;
 
 function Camera() {
     const cameraRef = useRef(null);
     const dispatch = useDispatch();
+    const { name } = useSelector((state)=>state.track);
     const [zoom, setZoom] = useState(0);
     const [ratio, setRatio] = useState(1);
     const [flash, setFlash] = useState<number>(0);
@@ -31,12 +31,13 @@ function Camera() {
     if (!permission.granted) {
         // Camera permissions are not granted yet.
         return (
-            <View style={styles.container}>
+            <View style={[styles.container,styles.permission]}>
                 <Text style={styles.message}>Нужно ваше разрешение на использование камеры</Text>
                 <Button onPress={requestPermission} title="Разрешить" />
             </View>
         );
     };
+
     function Ratio(a: string) {
         if (a === '16:9') {
             return 16 / 9
@@ -47,23 +48,26 @@ function Camera() {
         }
     }
     async function takePicture() {
-        const id = await AsyncStorage.getItem('photo');
-        
-        try {
-            const { uri } = await cameraRef.current!.takePictureAsync();                      
-            Add_photo(uri, id);
-            const data = await Location.getCurrentPositionAsync({});
-            const point = {
-                longitude: data.coords.longitude + ( 0.01 - Math.random()/50 ),
-                latitude: data.coords.latitude + ( 0.01 + Math.random()/50 ),
-                type: 'photo'
-            };
-            dispatch(addpoint(point));
-        } catch (e) {
-            console.log(e)
-        }
+        const { uri } = await cameraRef.current!.takePictureAsync();
+        const directoryUri = `${FileSystem.documentDirectory}${'images'}${'/'}${name}`;
+        let { exists } = await FileSystem.getInfoAsync(directoryUri);
+        if( exists ) {
+            await FileSystem.moveAsync({from: uri, to: directoryUri +'/' + ratio + '_' + Date.now() + '.jpg'})
+        } else {
+            CreateDB();
+            await FileSystem.makeDirectoryAsync(directoryUri,{intermediates: true});
+            await FileSystem.moveAsync({from: uri, to: directoryUri +'/' + ratio + '_' + Date.now() + '.jpg'});
+        };       
+        const { coords } = await Location.getCurrentPositionAsync({ accuracy: 5 });
+        const x = 0.001 - Math.random()/500;
+        const point = {
+            longitude: coords.longitude +  0.001 - Math.random()/500,
+            latitude: coords.latitude +  0.001 - Math.random()/500 ,
+            type: 'photo'
+        };
+        dispatch(addpoint(point));
+        router.push('/(tabs)/map');
     };
-
     return (
         <View style={styles.container}>
             <StatusBar barStyle='light-content' backgroundColor="#000" />
@@ -94,7 +98,6 @@ function Camera() {
                 ratio={ratio === 1 ? '1:1' : ratio === 4 ? '4:3' : '16:9'}
                 flash={flash === 0 ? 'off' : 'on'}
                 facing={facing === 0 ? 'back' : 'front'}
-                enableTorch={true}
             />
             <View style={styles.six}>
                 <LinearGradient style={[styles.plusBtn, styles.photo]} colors={background}>
@@ -111,7 +114,9 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
         paddingBottom: 20,
         marginTop: StatusBar.currentHeight
-
+    },
+    permission: {
+        marginTop: 100,
     },
     message: {
         textAlign: 'center',
@@ -126,7 +131,6 @@ const styles = StyleSheet.create({
     },
     camera: {
         width: '100%',
-
     },
     plusBtn: {
         height: 50,
@@ -142,7 +146,6 @@ const styles = StyleSheet.create({
         marginHorizontal: 'auto',
         borderRadius: 50,
         alignContent: 'center'
-
     },
     flash: {
         width: 50,
@@ -173,6 +176,5 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 20,
         width: '100%'
-
     }
 });
