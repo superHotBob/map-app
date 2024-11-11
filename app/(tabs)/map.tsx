@@ -8,13 +8,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as MediaLibrary from 'expo-media-library';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSelector, useDispatch } from 'react-redux';
 import {addpoint, deletepoint, setname } from '@/reduser';
 import { captureRef } from 'react-native-view-shot';
 import RunBlock from '@/components/runblock';
 import { ToDBwriteWalk, SecondsToTime, ToDBwriteRun, CreateDB } from '@/hooks/useDB';
-import { GetCoordinate } from '@/scripts/functions';
+
 const { height, width } = Dimensions.get('window');
 
 const Map = () => {
@@ -52,8 +51,8 @@ const Map = () => {
     const {coords} = await Location.getCurrentPositionAsync({timeInterval: 30000 , accuracy: 5});    
     const x =  0.001 - Math.random()/500; 
     const point = {
-        longitude: coords.longitude + 0.001 - Math.random()/500,
-        latitude: coords.latitude + 0.001 - Math.random()/500,
+        longitude: coords.longitude ,
+        latitude: coords.latitude ,
         type: type
     };   
     dispatch(addpoint(point));

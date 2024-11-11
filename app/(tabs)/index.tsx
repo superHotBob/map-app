@@ -4,19 +4,21 @@ import {
   StyleSheet,  
 } from 'react-native';
 import MyLink from '@/components/Link';
-import * as FileSystem from 'expo-file-system';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from 'expo-router';
 
 const HomeScreen = () => { 
   const [back , setBack] = useState('forest');
-  useEffect(() => {
-    async function GetBack() {
-      let back = await AsyncStorage.getItem('background');
-      setBack(back);
-    };
-    GetBack();
-  },);
+  useFocusEffect(
+    useCallback(() => {
+        async function ReadStorage() {           
+          const dd = await AsyncStorage.getItem('background');            
+          setBack(dd);      
+        };
+        ReadStorage();
+    }, [])
+);
   const image = { uri : `https://superbob.pythonanywhere.com/image?name=${back}`}
   
   return (

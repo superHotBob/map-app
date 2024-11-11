@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FlatList, View, Text , Pressable, Image, Dimensions, StyleSheet} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 const { width } = Dimensions.get('window');
 
 export default function Background() {
@@ -15,7 +16,8 @@ export default function Background() {
         GetImages();
     }, [])
     const SetBackground = async (i:string) => {
-        await AsyncStorage.setItem('background',i);       
+        await AsyncStorage.setItem('background',i);
+        router.back();       
     }
     const Item = ({ item, index }: { index: number, item:  string }) => (
         <Pressable style={styles.imageTextPress} onPress={()=>SetBackground(item)}>
@@ -29,7 +31,8 @@ export default function Background() {
         <View style={{padding: 10,backgroundColor: '#fff'}}>
             <FlatList
                 data={images}
-                numColumns={2}                
+                numColumns={2}
+                ListEmptyComponent={<Text>waiting</Text>}                
                 keyExtractor={item => item}
                 renderItem={({ item, index }) => <Item item={item} index={index} />}
             />

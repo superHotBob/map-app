@@ -61,8 +61,8 @@ function Camera() {
         const { coords } = await Location.getCurrentPositionAsync({ accuracy: 5 });
         const x = 0.001 - Math.random()/500;
         const point = {
-            longitude: coords.longitude +  0.001 - Math.random()/500,
-            latitude: coords.latitude +  0.001 - Math.random()/500 ,
+            longitude: coords.longitude ,
+            latitude: coords.latitude  ,
             type: 'photo'
         };
         dispatch(addpoint(point));
