@@ -26,11 +26,11 @@ const styles = StyleSheet.create({
       letterSpacing: 1.4
     },
     btn1: {      
-      width: 200,
+      width: 250,
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: 140,
-      height: 150,
+      height: 120,
       opacity: 0.9,
       borderWidth: 6,
       borderColor: '#fff'
