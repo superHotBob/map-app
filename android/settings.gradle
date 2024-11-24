@@ -11,7 +11,7 @@ pluginManagement {
 }
 
 plugins { id("com.facebook.react.settings") }
-println("SETTINGS FILE: This is executed during the initialization phase")
+
 def getRNMinorVersion() {
   def version = providers.exec {
     commandLine("node", "-e", "console.log(require('react-native/package.json').version);")
@@ -47,13 +47,6 @@ if (getRNMinorVersion() >= 75) {
 rootProject.name = 'tracker'
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
-    repositories{
-      google()
-      // jcenter()
-      mavenCentral()      
-      // maven { url "https://jitpack.io" }
-    }
   versionCatalogs {
     reactAndroidLibs {
       from(files(new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), "../gradle/libs.versions.toml")))
@@ -61,11 +54,11 @@ dependencyResolutionManagement {
   }
 }
 
-apply from: new File(["node", "--print", "require.resolve('expo/package.json')"].execute(null, rootDir).text.trim(), "../scripts/autolinking.gradle")
+apply from: new File(["node", "--print", "require.resolve('expo/package.json')"].execute(null, rootDir).text.trim(), "../scripts/autolinking.gradle");
 useExpoModules()
 
 if (getRNMinorVersion() < 75) {
-  apply from: new File(["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim(), "../native_modules.gradle")
+  apply from: new File(["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim(), "../native_modules.gradle");
   applyNativeModulesSettingsGradle(settings)
 }
 

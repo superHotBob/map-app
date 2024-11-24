@@ -71,8 +71,7 @@ function Statistic() {
                     map(i => <Text key={i} style={[styles.date,{width: i=== 'Name'? '25%': '25%'}]}>{i}</Text>)}
             </View>
             <FlatList               
-                data={path}
-                
+                data={path}                
                 ListEmptyComponent={<Text style={styles.nodata}>NO DATA</Text>}
                 keyExtractor={item => item.endtime + ''}
                 renderItem={({ item, index }) => <Item i={item} index={index} />}

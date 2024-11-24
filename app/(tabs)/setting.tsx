@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#ddd',
         justifyContent: 'center',       
         alignItems: "center",
-        marginTop: StatusBar.currentHeight,
+       
         gap: 10
     },
     mainText: {

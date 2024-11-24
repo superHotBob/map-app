@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FlatList, View, Text , Pressable, Image, Dimensions, StyleSheet} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 const { width } = Dimensions.get('window');
 
 export default function Background() {
@@ -10,8 +11,9 @@ export default function Background() {
         async function GetImages() {
             let response = await fetch('https://superbob.pythonanywhere.com/images');
             let images = await response.json();
-            let all_images = images.map(i=>i.replace('.jpg',''))
-            setImages(all_images);            
+            let all_images = images.map(i=>i.slice(0,-4))
+            setImages(all_images); 
+                    
         }
         GetImages();
     }, [])
@@ -29,6 +31,7 @@ export default function Background() {
       );
     return (
         <View style={{padding: 10,backgroundColor: '#fff'}}>
+            <StatusBar />
             <FlatList
                 data={images}
                 numColumns={2}

@@ -9,14 +9,15 @@ import { router } from 'expo-router';
 import * as MediaLibrary from 'expo-media-library';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useSelector, useDispatch } from 'react-redux';
-import {addpoint, deletepoint, setname } from '@/reduser';
+import { addpoint, deletepoint, setname } from '@/reduser';
 import { captureRef } from 'react-native-view-shot';
 import RunBlock from '@/components/runblock';
 import { ToDBwriteWalk, SecondsToTime, ToDBwriteRun, CreateDB } from '@/hooks/useDB';
-
+import { useKeepAwake } from 'expo-keep-awake';
 const { height, width } = Dimensions.get('window');
 
 const Map = () => {
+  useKeepAwake();
   const refzoom = useRef();
   const timeRef = useRef<number>(0);
   const dispatch = useDispatch();
@@ -42,28 +43,34 @@ const Map = () => {
     }
   }, []);
 
-  const GetLocations = async (i: { coordinate: { timestamp: number, latitude: number, longitude: number, speed: number } }) => {
-    
-    if(!startStop) return;
-    
-    if (i.coordinate.timestamp - timeRef.current < 30000*nodes.length-10000) return;
-    
-    const {coords} = await Location.getCurrentPositionAsync({timeInterval: 30000 , accuracy: 5});    
-    const x =  0.001 - Math.random()/500; 
+  async function GetCoord() {
+    const  { coords } = await Location.getCurrentPositionAsync({ timeInterval: 30000, accuracy: 5 });
+    const x = 0.001-Math.random()/500;    
     const point = {
-        longitude: coords.longitude ,
-        latitude: coords.latitude ,
-        type: type
-    };   
-    dispatch(addpoint(point));
+      longitude: coords.longitude ,
+      latitude: coords.latitude ,
+      type: type,
+      speed: coords.speed
+    };
     
-    if (type === 'running') {
-      setSpeed(coords.speed + Math.random() * 10);
-    }
+    dispatch(addpoint(point));
     GetDistance(point);
+    if (type === 'running') {
+      setSpeed(coords.speed);
+    }
+  }
+
+  const GetLocations = async (i: { coordinate: { timestamp: number, latitude: number, longitude: number, speed: number } }) => {
+
+    if (!startStop) return;
+
+    if (i.coordinate.timestamp - timeRef.current < 30000 * nodes.length - 10000) return;
+    GetCoord();    
+   
+    
   };
 
-  const Save = () => {
+  const SaveMessage = () => {
     Alert.alert('Сохранить путь',
       name + ', \n' + 'time: ' + SecondsToTime(timeRef.current) + ',' + ' \n' + 'path: ' + path + ' m.',
       [
@@ -76,25 +83,33 @@ const Map = () => {
       ]
     );
   };
-  const SavePath = async () => {
+  const SavePath = async() => {
+    await GetCoord();
+    await fetch(`https://superbob.pythonanywhere.com/path?name=${name}`,
+      {
+        method: "POST",
+        body: JSON.stringify(nodes)
+      }
+    );
+    
     const localUri = await captureRef(refzoom, {
       fileName: name.trimEnd() + '_',
       format: 'jpg',
       height: height - 225,
       width: width,
       quality: 1,
-    });    
+    });
     const directoryUri = `${FileSystem.documentDirectory}${'images'}`;
     let { exists } = await FileSystem.getInfoAsync(directoryUri);
-    if( exists ) {
-      await FileSystem.moveAsync({from: localUri, to: directoryUri +'/' + name + '.jpg'})
+    if (exists) {
+      await FileSystem.moveAsync({ from: localUri, to: directoryUri + '/' + name + '.jpg' })
     } else {
       CreateDB();
-      await FileSystem.makeDirectoryAsync(directoryUri,{intermediates: true});
-      await FileSystem.moveAsync({from: localUri, to: directoryUri +'/' + name + '.jpg'})
-    };   
-    const photo_count = nodes.filter((i: { type: string }) => i.type === 'photo').length;   
-   
+      await FileSystem.makeDirectoryAsync(directoryUri, { intermediates: true });
+      await FileSystem.moveAsync({ from: localUri, to: directoryUri + '/' + name + '.jpg' })
+    };
+    const photo_count = nodes.filter((i: { type: string }) => i.type === 'photo').length;
+
     if (type === 'walking') {
       await ToDBwriteWalk(name, timeRef, photo_count, path, type);
       DeletePath();
@@ -103,13 +118,13 @@ const Map = () => {
       await ToDBwriteWalk(name, timeRef, photo_count, path, type);
       ToDBwriteRun(name, speed, distance, timeRef, calories);
       DeletePath();
-    }   
+    };
   };
 
   function DeletePath() {
     router.dismissAll();
     dispatch(deletepoint());
-    dispatch(setname(''));    
+    dispatch(setname(''));
   };
 
   type loc = { latitude: number, longitude: number }
@@ -178,12 +193,12 @@ const Map = () => {
         mapType={typeMap}
         showsUserLocation={startStop}
         userLocationPriority='high'
-        
+
         followsUserLocation={true}
         provider={PROVIDER_GOOGLE}
         onUserLocationChange={(e) => GetLocations(e.nativeEvent)}
         userLocationFastestInterval={30000}
-        style={[styles.map, { height: height - 225 }]}
+        style={[styles.map, { height: height - 245 }]}
         onPress={() => setHeightBlock(height - 45)}
         region={{
           latitude: nodes[0].latitude,
@@ -198,12 +213,13 @@ const Map = () => {
           strokeWidth={3}
         />
         {nodes.map((i: { type: string; latitude: any; longitude: any; }, index: Key | null | undefined) => i.type === 'photo' ?
-          <Marker key={index}
+          <Marker 
+            key={index}
             coordinate={{
               latitude: i.latitude,
               longitude: i.longitude
             }}
-            calloutOffset={{ x: -15, y: -15 }}           
+            calloutOffset={{ x: -15, y: -15 }}
             icon={require('../../assets/images/camera.png')}
           />
           :
@@ -252,7 +268,7 @@ const Map = () => {
           </TouchableHighlight>) : (<>
             <TouchableHighlight
               style={styles.btnStop}
-              onPress={Save}
+              onPress={SaveMessage}
 
             >
               <Text style={[styles.btnText, { backgroundColor: 'maroon' }]}>
@@ -287,7 +303,7 @@ const Map = () => {
 };
 const styles = StyleSheet.create({
   main_block: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ddd',
     flex: 1,
   },
   runningBlock: {
@@ -343,7 +359,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 8,
     gap: 30,
-    alignItems: 'center'
+    alignItems: 'center',
+    marginBottom: 70
   },
   btnStartStop: {
     position: 'absolute',
@@ -385,7 +402,6 @@ const styles = StyleSheet.create({
   button_map_text: {
     fontSize: 20,
     textAlign: 'center',
-
     lineHeight: 50,
     color: '#fff'
   },
@@ -395,7 +411,7 @@ const styles = StyleSheet.create({
     width: '32%',
     marginHorizontal: 'auto',
     borderRadius: 28,
-
+    
   },
 
 });

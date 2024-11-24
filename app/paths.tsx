@@ -5,7 +5,8 @@ import {
   FlatList,
   StyleSheet,
   View,
-  Dimensions
+  Dimensions,
+  StatusBar
 } from "react-native";
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -72,6 +73,12 @@ export default function Patch() {
       }
     })
   };
+  function ViewPath(i:string) {   
+    router.push({
+      pathname: '/pathmap',
+      params: {name: i.slice(0,-4)}
+    })
+  }
 
 
 
@@ -85,12 +92,12 @@ export default function Patch() {
       <Image
         style={{ width: (width_window / 2) - 15, height: ((width_window / 2) - 10)*((height - 225)/width_window )  }}
         source={{ uri: directoryUri +'/' + item}}
-      />
-      {/* <Text style={styles.imageText}>{Path_date(item.modificationTime, 'ru-RU')}</Text> */}
+      />     
     </Pressable>
   );
   return (
     <View style={styles.mainBlock}>
+      <StatusBar barStyle="dark-content"   />
       <FlatList
         data={images}
         numColumns={2}
@@ -112,8 +119,7 @@ export default function Patch() {
               <Text style={styles.headerText}>{GetName(images[imageIndex])}</Text>
               <Ionicons onPress={() => GoToStatistic(images[imageIndex])} name="stats-chart" size={35} color="blue" />
             </View>
-          )
-        }
+          )}
         }
         FooterComponent={({ imageIndex }) =>
           <View style={styles.icons}>
@@ -125,6 +131,13 @@ export default function Patch() {
               color="green"
             />
             <Ionicons
+              onPress={() => ViewPath(images[imageIndex])}
+              style={styles.trash}
+              name="map"
+              size={50}
+              color="#ff7fff"
+            />
+            <Ionicons
               onPress={() => SharePath(images[imageIndex])}
               style={styles.trash}
               name="share"
@@ -132,7 +145,6 @@ export default function Patch() {
               color="#ff7fff"
             />
           </View>
-
         }
       />
     </View>

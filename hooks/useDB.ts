@@ -35,7 +35,7 @@ export async function CreateDB() {
     const db = await SQLite.openDatabaseAsync('tracker', { useNewConnection: true });
     await db.execAsync(`
         PRAGMA journal_mode = WAL;
-        CREATE TABLE run (id INTEGER PRIMARY KEY NOT NULL, 
+        CREATE TABLE run IF NOT EXISTS (id INTEGER PRIMARY KEY NOT NULL, 
           name TEXT NOT NULL,            
           begintime INTEGER,
           time INTEGER,
@@ -46,7 +46,7 @@ export async function CreateDB() {
     `);
     await db.execAsync(`
         PRAGMA journal_mode = WAL;
-        CREATE TABLE paths (id INTEGER PRIMARY KEY NOT NULL, 
+        CREATE TABLE paths IF NOT EXISTS (id INTEGER PRIMARY KEY NOT NULL, 
           name TEXT NOT NULL,            
           begintime INTEGER,
           endtime INTEGER,

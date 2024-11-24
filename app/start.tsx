@@ -9,7 +9,14 @@ import { setname, addpoint, settype } from "@/reduser";
 import * as Location from 'expo-location';
 import { useRouter } from "expo-router";
 
+
+
+
+
+
+
 function Enter() {
+   
     const router = useRouter();
     const dispatch = useDispatch();  
     const [typemove, setTypeMove ] = useState('walking');
@@ -19,15 +26,21 @@ function Enter() {
     });
     const StartPath = async () => {
         let { status } = await Location.requestForegroundPermissionsAsync();
+        let { status: status_back} = await Location.requestBackgroundPermissionsAsync()
         if (status !== 'granted') {            
             return;
         };
+        if (status_back !== 'granted') {            
+            return;
+        };
+        
         const {coords} = await Location.getCurrentPositionAsync({accuracy: 5});
        
         const first_point = {
             longitude: coords.longitude ,
             latitude: coords.latitude ,
-            type: typemove
+            type: typemove,
+            speed: 0
         };       
         dispatch(addpoint(first_point));
         dispatch(setname(name.trimEnd()));  
@@ -74,8 +87,7 @@ const styles = StyleSheet.create({
     selector: {
         flexDirection: 'row',
         width: '80%',
-        justifyContent: 'space-between',
-        marginVertical: 10
+        justifyContent: 'space-between'       
     },
     input: {
         height: 60,
@@ -92,7 +104,8 @@ const styles = StyleSheet.create({
     },
     mainBlock: {        
         flex: 1,
-        justifyContent: 'center',
+        paddingTop: 100,
+        justifyContent: 'flex-start',
         alignItems: 'center',        
         gap: 16,
         backgroundColor: '#fff'

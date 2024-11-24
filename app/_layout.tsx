@@ -51,9 +51,9 @@ export default function RootLayout() {
     );
     const styleHeader = {
       color: color.tint,
-      fontSize: 22, 
+      fontSize: 28, 
       fontFamily: 'SpaceMono',
-      fontWeight: 'bold'
+      
     };
     
   return (
@@ -76,6 +76,17 @@ export default function RootLayout() {
             headerTintColor: color.tint,            
             headerTitleAlign: 'center', 
             title: 'Statistic', 
+            headerLargeTitle: true,
+            headerTitleStyle: styleHeader,  
+            headerShown: true
+          }} 
+        />
+        <Stack.Screen 
+          name="pathmap" 
+          options={{
+            headerTintColor: color.tint,            
+            headerTitleAlign: 'center', 
+            title: 'map', 
             headerLargeTitle: true,
             headerTitleStyle: styleHeader,  
             headerShown: true
