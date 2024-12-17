@@ -5,8 +5,8 @@ const initialState = {
   name: '',
   type: '',
   time: 30000,
-  weight: 70,
-  braslet: false
+  weight: 80,
+  sound: true 
 };
 
 export const pathSlice = createSlice({
@@ -22,6 +22,9 @@ export const pathSlice = createSlice({
     settime: (state, action) => {      
       state.time = action.payload;
      },
+     setsound: (state, action) => {      
+      state.sound = !state.sound;
+     },
      setweight: (state, action) => {      
       state.weight = action.payload;
      },
@@ -34,10 +37,10 @@ export const pathSlice = createSlice({
         nodes: [],
       };      
     },
-    setbraslet: (state, action) => {
+    setbraslet: (state ) => {
       state.braslet = !state.braslet
     }
   },
 });
-export const {setbraslet, setweight, settime, addpoint, deletepoint, setname, settype } = pathSlice.actions;
+export const {setbraslet, setsound, setweight, settime, addpoint, deletepoint, setname, settype } = pathSlice.actions;
 export default pathSlice.reducer;

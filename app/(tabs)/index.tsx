@@ -10,9 +10,11 @@ import { useFocusEffect } from 'expo-router';
 
 const HomeScreen = () => { 
   const [back , setBack] = useState<string|null>('forest');
+  
+
   useFocusEffect(
     useCallback(() => {     
-      async function ReadStorage() {           
+      async function ReadStorage() {              
         const background = await AsyncStorage.getItem('background');            
         setBack(background);      
       };

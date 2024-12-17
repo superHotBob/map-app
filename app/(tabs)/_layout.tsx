@@ -51,6 +51,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="media"       
+        options={{                   
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon name={focused ? 'musical-notes' : 'musical-notes-outline'} color='#fff' />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="setting"       
         options={{                   
           tabBarIcon: ({ focused }) => (

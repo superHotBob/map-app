@@ -1,6 +1,7 @@
 import {
     View, Text, TextInput,
-    TouchableHighlight, StyleSheet
+    TouchableHighlight, StyleSheet,
+    Button
 } from "react-native";
 import { useFonts } from 'expo-font';
 import { useState } from "react";
@@ -8,15 +9,8 @@ import { useDispatch } from "react-redux";
 import { setname, addpoint, settype } from "@/reduser";
 import * as Location from 'expo-location';
 import { useRouter } from "expo-router";
-
-
-
-
-
-
-
-function Enter() {
-   
+import { Path_date } from "@/scripts/functions";
+function Enter() {   
     const router = useRouter();
     const dispatch = useDispatch();  
     const [typemove, setTypeMove ] = useState('walking');
@@ -25,33 +19,30 @@ function Enter() {
         'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),        
     });
     const StartPath = async () => {
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        let { status: status_back} = await Location.requestBackgroundPermissionsAsync()
+        let { status } = await Location.requestForegroundPermissionsAsync();       
         if (status !== 'granted') {            
             return;
-        };
-        if (status_back !== 'granted') {            
-            return;
-        };
-        
-        const {coords} = await Location.getCurrentPositionAsync({accuracy: 5});
-       
-        const first_point = {
-            longitude: coords.longitude ,
-            latitude: coords.latitude ,
-            type: typemove,
-            speed: 0
-        };       
+        };        
+        const {coords} = await Location.getCurrentPositionAsync({accuracy: 5});       
+        const first_point = [
+            coords.latitude ,
+            coords.longitude ,            
+            typemove,
+            0
+        ];       
         dispatch(addpoint(first_point));
         dispatch(setname(name.trimEnd()));  
         dispatch(settype(typemove));
         router.push('/(tabs)/map');
         setName('');           
     };
+    function setDateName() {
+        setName("" + Date.now())
+    }
     
     return (
         <View style={styles.mainBlock}>
-            <Text style={{fontFamily: 'SpaceMono', fontSize: 24 }}>Select movie</Text>
+            <Text style={{fontFamily: 'SpaceMono', fontSize: 28 }}>Select movie</Text>
             <View style={styles.selector}>                
                 <Text 
                     onPress={()=>setTypeMove('walking')} 
@@ -64,13 +55,14 @@ function Enter() {
                     {backgroundColor: typemove === 'running' ? 'green' : '#ddd'}]}
                 >RUN</Text>
             </View>            
-            <Text style={{fontFamily: 'SpaceMono', fontSize: 22 }}>Enter path name</Text>
+            <Text style={{fontFamily: 'SpaceMono', fontSize: 28 }}>Enter path name or</Text>
+            <Button onPress={setDateName} title="set how date" />
             <TextInput
                 style={styles.input}
-                value={name}
+                value={Number(name) ? Path_date(name,'ru-RU') : name}
                 placeholder="My best walk"
                 autoFocus
-                maxLength={15}
+                maxLength={18}
                 cursorColor="blue"
                 onChangeText={setName}
                 inputMode="text"
@@ -104,7 +96,7 @@ const styles = StyleSheet.create({
     },
     mainBlock: {        
         flex: 1,
-        paddingTop: 100,
+        paddingTop: 10,
         justifyContent: 'flex-start',
         alignItems: 'center',        
         gap: 16,

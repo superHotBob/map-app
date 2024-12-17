@@ -60,11 +60,12 @@ function Camera() {
         };       
         const { coords } = await Location.getCurrentPositionAsync({ accuracy: 5 });
         const x = 0.001 - Math.random()/500;
-        const point = {
-            longitude: coords.longitude,
-            latitude: coords.latitude,
-            type: 'photo'
-        };
+        const point = [
+            coords.latitude,
+            coords.longitude,            
+            'photo',
+            coords.speed
+        ];
         dispatch(addpoint(point));
         router.push('/(tabs)/map');
     };
@@ -100,7 +101,7 @@ function Camera() {
                 facing={facing === 0 ? 'back' : 'front'}
             />
             <View style={styles.six}>
-                <LinearGradient style={[styles.plusBtn, styles.photo]} colors={background}>
+                <LinearGradient style={styles.photo} colors={background}>
                     <Ionicons onPress={takePicture} name="camera" size={40} color="#fff" />
                 </LinearGradient>
             </View>
@@ -145,7 +146,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginHorizontal: 'auto',
         borderRadius: 50,
-        alignContent: 'center'
+        alignItems: 'center',
+        marginBottom: 50
     },
     flash: {
         width: 50,

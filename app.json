@@ -8,10 +8,11 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/adaptive-icon.png",
+      "image": "./assets/images/icon_big.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ff6347"
+      "backgroundColor": "#ff77ff"
     },
+    
     "ios": {
       "supportsTablet": true
     },
@@ -30,7 +31,8 @@
         "android.permission.ACCESS_MEDIA_LOCATION",
         "android.permission.ACCESS_BACKGROUND_LOCATION",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_LOCATION"
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.WRITE_SETTING"
       ],
       "package": "com.bobozeranski.tracker",
       "config": {

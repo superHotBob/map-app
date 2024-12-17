@@ -33,7 +33,8 @@ export default function Patch() {
 
   async function GetPaths() {    
     let images = await FileSystem.readDirectoryAsync(directoryUri);
-    let filtr = images.filter(i=>i.includes('.jpg'));        
+    let filtr = images.filter(i=>i.includes('.jpg'));
+        
     setImages(filtr);
   };
 
@@ -62,7 +63,7 @@ export default function Patch() {
     });
     const path = await db.getAllAsync(`SELECT * FROM paths where name = ?`, [name]);
     router.push({
-      pathname: '/path',
+      pathname: path[0].type === 'walking' ? '/pathwalk' : '/pathrunning',
       params: {
         start: path[0].begintime,
         end: path[0].endtime,
@@ -115,16 +116,16 @@ export default function Patch() {
         HeaderComponent={({ imageIndex }) => {
           return (
             <View style={styles.headerBlock}>
-              <Ionicons onPress={() => setIsVisible(false)} name="arrow-back-sharp" color="blue" size={25} />
+              <Ionicons onPress={() => setIsVisible(false)} name="arrow-back-sharp"  color="#ff7fff" size={35} />
               <Text style={styles.headerText}>{GetName(images[imageIndex])}</Text>
-              <Ionicons onPress={() => GoToStatistic(images[imageIndex])} name="stats-chart" size={35} color="blue" />
+              <Ionicons onPress={() => GoToStatistic(images[imageIndex])} name="stats-chart" size={45}  color="#ff7fff" />
             </View>
           )}
         }
         FooterComponent={({ imageIndex }) =>
           <View style={styles.icons}>
              <Ionicons
-              onPress={() => DeletePath(images[imageIndex])}
+              onPress={() => DeleteMyPath(images[imageIndex])}
               style={styles.trash}
               name="trash"
               size={50}
@@ -168,7 +169,7 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   headerText: {
-    fontSize: 22,
+    fontSize: 28,
     color: '#ff7fff'
   },
   imageText: {
