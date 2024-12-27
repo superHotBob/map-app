@@ -33,3 +33,8 @@ export async function DeletePath(name) {
     const fileUri = `${FileSystem.documentDirectory}${'images'}${'/'}${name}${'.jpg'}`;
     await FileSystem.deleteAsync(fileUri);
 };
+export function SecToMin(a) {
+    let mins = Math.trunc(a / 60);
+    let sec = a - mins * 60;
+    return mins + ':' + (sec >= 10 ? sec : '0' + sec)
+}

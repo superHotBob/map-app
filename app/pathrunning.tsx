@@ -17,7 +17,6 @@ import { Colors } from '@/constants/Colors';
 import Chart from '@/components/chart';
 
 
-const { width, height } = Dimensions.get('window');
 const color = Colors.light.tint;
 interface thisPath {
     speed: number,
@@ -62,7 +61,7 @@ const Carusel = () => {
                 const path = await db.getAllAsync('SELECT * FROM run WHERE name =  ? ', name);
 
                 setThisPath(path[0]);
-                console.log(path)
+                
             };
             GetAssets();
         }, [])

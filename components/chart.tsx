@@ -2,28 +2,21 @@ import {  Dimensions, ScrollView } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 const { width } = Dimensions.get("window")
 
-export default function Chart({ new_data, new_labels , interval}) {
+export default function Chart({ new_data, new_labels }) { 
 
-    console.log(new_labels)
-
-    function labelSec(i) {
-        console.log(new_labels)
-        const s = (Math.trunc(i*interval/60000) === 0 ? '': Math.round(i*interval/60000)) 
-        return s
-    }
     
     return (
        <ScrollView horizontal>
             <LineChart
                 data={{
-                    labels: new_labels,
+                    labels: new_labels.flat(),
                     datasets: [
                         {
                             data: new_data
                         }
                     ]
                 }}
-                width={width*Math.ceil(new_labels.length/16)} // from react-native
+                width={width*Math.ceil(new_labels.flat().length/10)} // from react-native
                 height={300}
                 fromZero
                 xLabelsOffset={5} 

@@ -92,6 +92,6 @@ export function Duration(a:number, b:number) {
     const hours = +(time / 3600).toFixed(0);   
     const mins = Math.trunc((time - hours * 3600) / 60);
     const sec = time - hours * 3600 - mins * 60;
-    return ((hours === 0 ? '0 : ' : hours + ' h ') + (mins < 10 ? mins : mins) + ' : ' +
+    return ((hours === 0 ? '0:' : hours + ' h ') + (mins < 10 ? mins : mins) + ':' +
         (Math.round(sec) < 10 ? '0' + Math.round(sec) : Math.round(sec)));
 }

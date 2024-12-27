@@ -4,7 +4,7 @@ import 'expo-dev-client';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { Alert, useColorScheme, View, Text, StyleSheet, Button } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import ErrorBoundary from 'react-native-error-boundary'
@@ -58,6 +58,7 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
+      <Suspense fallback={<Text>Loading...</Text>}>
       <ErrorBoundary FallbackComponent={CustomFallback}>
         <Stack
           screenOptions={{
@@ -128,6 +129,7 @@ export default function RootLayout() {
           <Stack.Screen name="+not-found" />
         </Stack>
       </ErrorBoundary>
+      </Suspense>
     </Provider>
   );
 }

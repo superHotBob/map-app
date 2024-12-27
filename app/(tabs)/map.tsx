@@ -14,7 +14,6 @@ import { ToDBwriteWalk, SecondsToTime, ToDBwriteRun, CreateDB } from '@/hooks/us
 import { useKeepAwake } from 'expo-keep-awake';
 const { height, width } = Dimensions.get('window');
 import * as Brightness from 'expo-brightness';
-import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';
 
 
@@ -29,7 +28,7 @@ export default function Map() {
   const [typeMap, settypeMap] = useState<string>('standard');
   const [zoom, setZoom] = useState(12); 
   const [speed, setSpeed] = useState(0);
-  // const [sound, setSound] = useState();
+ 
 
 
   const {sound, nodes, type, name , time} = useSelector((state) => state.track);
@@ -40,28 +39,23 @@ export default function Map() {
       setDistance(0);
       setPath(0);      
     }
-    // return sound
-    // ? () => {        
-    //     sound.unloadAsync();
-    //   }
-    // : undefined;
+  
   }, []);
 
   async function ChangeBrigthness() {
     const { status } = await Brightness.requestPermissionsAsync();
     if (status === 'granted') {
-      Brightness.setBrightnessAsync(0.5);
+      Brightness.setBrightnessAsync(0.1);
     }
   };
 
-  async function GetCoord() {
-    console.log(time);
+  async function GetCoord() {   
     const { coords : { speed, latitude, longitude}} = await Location.getCurrentPositionAsync({ timeInterval: +time, accuracy: 5 });
     const x = 0.001-Math.random()/500; 
     
     const point = [
-      +(latitude + 0.001-Math.random()/500 ).toFixed(7),
-      +(longitude + 0.001-Math.random()/500 ).toFixed(7),
+      +(latitude).toFixed(7),
+      +(longitude).toFixed(7),
       type,
       +(speed * 3.6).toFixed(1)
     ];
@@ -77,10 +71,7 @@ export default function Map() {
     } else {
       getDistanceToBegin(latitude, longitude);
     }
-    //const {sound} = await Audio.Sound.createAsync( require('../../assets/bell.mp3'))  
-    
-    // setSound(sound);
-    // await sound.playAsync();
+  
   };
 
   function getDistanceToBegin(a:number,b:number) {
@@ -207,9 +198,11 @@ export default function Map() {
         showsUserLocation={startStop}
         userLocationPriority='high'       
         followsUserLocation={true}
+        liteMode={true}
         provider={PROVIDER_GOOGLE}
         onUserLocationChange={(e) => getLocations(e.nativeEvent)}
         userLocationFastestInterval={+time}
+        onLongPress={ChangeBrigthness}
         style={[styles.map, { height: height - 245 }]}        
         region={{
           latitude: nodes.slice(-1)[0][0],

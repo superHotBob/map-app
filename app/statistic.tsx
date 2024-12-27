@@ -131,6 +131,6 @@ const styles = StyleSheet.create({
         width: '33%',
         textAlign: 'center',
         letterSpacing: 1.2,
-        fontSize: 18
+        fontSize: 20
     }
 })

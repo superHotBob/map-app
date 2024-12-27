@@ -15,7 +15,7 @@ import { router, useFocusEffect } from 'expo-router';
 import ImageView from "react-native-image-viewing";
 import { Ionicons } from "@expo/vector-icons";
 import * as SQLite from 'expo-sqlite';
-import { DeletePath } from "@/scripts/functions";
+import { DeletePath, Path_date } from "@/scripts/functions";
 const width_window = Dimensions.get('window').width;
 const { height } = Dimensions.get('window');
 
@@ -50,8 +50,13 @@ export default function Patch() {
   };
 
   function GetName(i:string) {
-    return i.split('.')[0]
-  }
+    const name = i.split('.')[0];   
+    if (Number.isInteger(+name)) {
+      return Path_date(+name, 'ru-RU');
+    } else {
+      return name;
+    }    
+  };
 
   function SavePath(i: { uri: string }) {    
     return images.map(i => Object.assign({}, { uri: directoryUri +'/' + i, name: i }))
@@ -116,15 +121,15 @@ export default function Patch() {
         HeaderComponent={({ imageIndex }) => {
           return (
             <View style={styles.headerBlock}>
-              <Ionicons onPress={() => setIsVisible(false)} name="arrow-back-sharp"  color="#ff7fff" size={35} />
+              <Ionicons onPress={() => setIsVisible(false)} name="arrow-back-sharp"  color="#ff7fff" size={25} />
               <Text style={styles.headerText}>{GetName(images[imageIndex])}</Text>
-              <Ionicons onPress={() => GoToStatistic(images[imageIndex])} name="stats-chart" size={45}  color="#ff7fff" />
+              <Ionicons onPress={() => GoToStatistic(images[imageIndex])} name="stats-chart" size={35}  color="#ff7fff" />
             </View>
           )}
         }
         FooterComponent={({ imageIndex }) =>
           <View style={styles.icons}>
-             <Ionicons
+            <Ionicons
               onPress={() => DeleteMyPath(images[imageIndex])}
               style={styles.trash}
               name="trash"
@@ -154,7 +159,7 @@ export default function Patch() {
 
 const styles = StyleSheet.create({
   mainBlock: {
-    paddingTop: 10,
+    paddingTop: 1,
     flexDirection: 'row',
     paddingLeft: 8,
     backgroundColor: "#fff",
@@ -166,10 +171,10 @@ const styles = StyleSheet.create({
     height: 60,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',    
   },
   headerText: {
-    fontSize: 28,
+    fontSize: 24,
     color: '#ff7fff'
   },
   imageText: {
