@@ -10,7 +10,9 @@ import { setname, addpoint, settype } from "@/reduser";
 import * as Location from 'expo-location';
 import { useRouter } from "expo-router";
 import { Path_date } from "@/scripts/functions";
-function Enter() {   
+
+
+const Start: React.FC = () => {   
     const router = useRouter();
     const dispatch = useDispatch();  
     const [typemove, setTypeMove ] = useState('walking');
@@ -38,25 +40,39 @@ function Enter() {
     };
     function setDateName() {
         setName("" + Date.now())
-    }
+    };
     
     return (
         <View style={styles.mainBlock}>
-            <Text style={{fontFamily: 'SpaceMono', fontSize: 28 }}>Select movie</Text>
+            <Text style={styles.mainText}>Select</Text>
             <View style={styles.selector}>                
                 <Text 
                     onPress={()=>setTypeMove('walking')} 
-                    style={[styles.btnText,
-                        {backgroundColor: typemove === 'walking' ? 'green' : '#ddd'}]}
-                >WALK</Text>
+                    style={[
+                        styles.btnText,
+                        {
+                            backgroundColor: typemove === 'walking' ? '#ff7fff' : '#ddd',
+                            color: typemove === 'walking' ? '#fff' : '#ff7fff' ,
+                        }
+                    ]}
+                >
+                    WALKING
+                </Text>
                 <Text 
                     onPress={()=>setTypeMove('running')} 
-                    style={[styles.btnText,
-                    {backgroundColor: typemove === 'running' ? 'green' : '#ddd'}]}
-                >RUN</Text>
+                    style={[
+                        styles.btnText,
+                        {
+                            backgroundColor: typemove === 'running' ? '#ff7fff' : '#ddd',
+                            color: typemove === 'running' ? '#fff' : '#ff7fff',
+                        }
+                    ]}
+                >
+                    RUNNING
+                </Text>
             </View>            
             <Text style={{fontFamily: 'SpaceMono', fontSize: 28 }}>Enter path name or</Text>
-            <Button onPress={setDateName} title="set how date" />
+            <Button   onPress={setDateName} title="Set name how date" />
             <TextInput
                 style={styles.input}
                 value={Number(name) ? Path_date(name,'ru-RU') : name}
@@ -68,26 +84,30 @@ function Enter() {
                 inputMode="text"
                 autoCapitalize='sentences'                
             />
-            <TouchableHighlight disabled={name.length < 5} style={{ width: '80%',borderRadius: 28 }} onPress={StartPath}>
+            <TouchableHighlight disabled={name.length < 5} style={{ width: '90%',borderRadius: 28 }} onPress={StartPath}>
                 <Text style={[styles.btnText,{width: '100%'}]}>start {typemove} </Text>
             </TouchableHighlight>
         </View>
     );
 };
-export default Enter;
+export default Start;
 const styles = StyleSheet.create({
     selector: {
         flexDirection: 'row',
-        width: '80%',
+        width: '90%',
         justifyContent: 'space-between'       
+    },
+    mainText: {
+        fontFamily: 'SpaceMono', 
+        fontSize: 28 
     },
     input: {
         height: 60,
-        width: '80%',
+        width: '90%',
         justifyContent: 'center',
         alignItems: 'center',
-        borderColor: 'blue',
-        color: 'blue',
+        borderColor: '#ff7fff',
+        color: '#ff7fff',
         borderWidth: 1,
         paddingHorizontal: 25,
         borderRadius: 28,
@@ -100,18 +120,18 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
         alignItems: 'center',        
         gap: 16,
-        backgroundColor: '#fff'
+        backgroundColor: '#f3ecec'
     },
     btnText: {
         fontSize: 25,
         fontWeight: 'bold',
         textAlign: 'center',
-        backgroundColor: 'blue',
+        backgroundColor: '#ff7fff',
         lineHeight: 60,
         height: 60,
         color: '#fff',
         borderRadius: 28,
-        width: 120,
+        width: '47%',
         letterSpacing: 1.3,
         textTransform: 'uppercase'
     }

@@ -1,186 +1,208 @@
 import {
     View, Text, FlatList,
-    StyleSheet,
+    StyleSheet, Animated,   
+    TouchableHighlight
 } from 'react-native';
 import { SecToMin } from '@/scripts/functions';
-import { useCallback, useRef, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from 'expo-router';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import * as MediaLibrary from 'expo-media-library';
 import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
-import { TimerSong } from '@/components/timer_song';
+import { Songs } from '@/components/Songs';
 
-const HomeScreen = () => {
+
+const SongsPlayer = () => {
+    const opacity = useRef(new Animated.Value(0)).current;
     const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
-    const [files, setFiles] = useState([]);
+    const [songs, setSongs] = useState([]);
     const [timepause, setTimePause] = useState(0);
-    const [sound, setSound] = useState<Object| null>(null);
-    const [timeout, setTime] = useState();
-    const [volume, setVolume] = useState(1.0)
-    const fileIndex = useRef(-1);
-    const [viewVolume, setViewVolume] = useState(false);
+    const [sound, setSound] = useState<Object | null>(null);
+    const [volume, setVolume] = useState(10);
+    const fileIndex = useRef(0);
+    const [timefrombegin, setTimeOut] = useState(0);    
 
+    useEffect(() => {
+        Audio.setAudioModeAsync({
+            staysActiveInBackground: true,
+            playsInSilentModeIOS: true,
+            interruptionModeIOS: InterruptionModeIOS.DuckOthers,
+            interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+            shouldDuckAndroid: true,
+            playThroughEarpieceAndroid: false,
+        });
+        return sound ? () => sound.unloadAsync() : undefined;
+    }, [sound]);
+    useMemo(
+        async () => {
+            if (permissionResponse?.status !== 'granted') {
+                await requestPermission();
+            }
+            const id = await MediaLibrary.getAlbumAsync('Music');
+            const { assets } = await MediaLibrary.getAssetsAsync({
+                mediaType: 'audio',
+                album: id,
+                first: 100,
+                sortBy: 'default'
+            });
+            let ss = assets.map(i => Object.assign({}, { 'uri': i.uri }, { 'duration': (+i.duration).toFixed(0) }, { 'filename': i.filename }));
 
-    async function playMusic() {
-       
-        if ( fileIndex.current +1  === files.length ) {           
-            fileIndex.current = -1;
+            setSongs(ss);
+
+        }, []
+    );
+    
+   
+    async function playMusic(a = 1) {
+        if (fileIndex.current + 1 === songs.length) {
+            fileIndex.current = 0;
         };
         if (timepause === 0) {
-            fileIndex.current = fileIndex.current + 1
-        };
-
-        if (files.length === 0) {
-            return;
-        };
+            fileIndex.current = a
+        };       
         const { sound } = await Audio.Sound.createAsync(
-            { uri: files[fileIndex.current]['uri'] },
-            { volume: volume }
+            { uri: songs[fileIndex.current]['uri'] },
+            {
+                shouldPlay: true,
+                volume: volume / 10,
+                progressUpdateIntervalMillis: 10000,
+                positionMillis: timepause
+            }
         );
-       
-        setSound(sound);
-        const time = files[fileIndex.current]['duration'];
-
-        let timeout = setTimeout(() => {
-            sound.unloadAsync();
-            setSound(null);
-            playMusic();
-        }, time * 1000);
-        setTime(timeout);
-        sound.setPositionAsync(timepause);
         await sound.playAsync();
+        setSound(sound);
+        setTimeOut(10);
+        sound.setOnPlaybackStatusUpdate((status) => {
+            if ('didJustFinish' in status && status.didJustFinish) {
+                setTimePause(0);
+                playNextMusic(1);
+                return;
+            } else if (status.isLoaded) {
+                // setStatus(status.positionMillis)
+                // console.log(status)
+                // setTimeOut(status.durationMillis - status.positionMillis);
+
+            }
+        });
         setTimePause(0);
     };
-
-    useFocusEffect(
-        useCallback(() => {
-            async function ReadStorage() {
-                if (permissionResponse?.status !== 'granted') {
-                    await requestPermission();
-                }
-                const id = await MediaLibrary.getAlbumAsync('Music');
-                const all_files = await MediaLibrary.getAssetsAsync({
-                    mediaType: 'audio',
-                    album: id,
-                    first: 100
-                });
-                setFiles(all_files.assets);
-            };
-            ReadStorage();
-        }, [])
-    );
-
-    const Item = ({ title, index }: { title: {filename: string}, index: number }) => (
-        <View style={[styles.song_wrapper, { backgroundColor: index === fileIndex.current ? '#ddd' : '#fff' }]}>
-            <Text
-                onPress={() => playSelectMusic(index - 1)}
-                style={[styles.song,{fontWeight: index === fileIndex.current ? 'bold' : '400'}]}
-            >
-                {(title.filename.replace(".mp3", '')).substring(0, 25)}
-            </Text>
-            {index === fileIndex.current ?
-                <TimerSong
-                    duration={(title.duration).toFixed(0)}
-                    style={[styles.song,{fontWeight: index === fileIndex.current ? 'bold' : '400'}]}
-                    sound={timepause}
-                />
-                :
-                <Text style={styles.song_time}>
-                    {SecToMin((title.duration).toFixed(0))}
-                </Text>}
-        </View>
-    );
-    function playSelectMusic(a) {
+    async function playSelectMusic(a) {       
+        setTimePause(0);
         fileIndex.current = a;
-        clearTimeout(timeout);
-        stopMusic();
-        playMusic();
+        // stopMusic();
+        playMusic(a);
     };
-    function stopMusic() {
-        clearTimeout(timeout);
-        
-        sound != null
-            ? sound?.unloadAsync() : undefined;
-        setSound(null)    
-    };
-    async function pauseMusic() {
-        if (typeof sound !== 'object') return;
-        let s = await sound?.getStatusAsync();
-        if (s.positionMillis === 0) return;
 
-        setTimePause(s.positionMillis);
-        stopMusic();
+    const Item = ({ title, index }: { title: { filename: string, duration: string }, index: number }) => (
+        <TouchableHighlight 
+            onPress={() => playSelectMusic(index)}
+            underlayColor="#ccc"
+        >
+            <View style={[styles.song_wrapper]} >
+                <Text
+                    style={index === fileIndex.current && timefrombegin ? styles.song_active : styles.song}
+                >
+                    {(title.filename.replace(".mp3", '')).substring(0, 30)}
+                </Text>
+                {index === fileIndex.current && timefrombegin  ?
+                    <Text
+                        style={[styles.song_active, { textAlign: 'right' }]}
+                    >
+                        {SecToMin((+title.duration).toFixed(0))}
+                    </Text>
+                    :
+                    <Text style={styles.song_time}>
+                        {SecToMin((+title.duration).toFixed(0))}
+                    </Text>
+                }
+            </View>
+        </TouchableHighlight>);
+
+    function stopMusic() {
+        sound?.unloadAsync()
+        setSound(null)
+    };
+    async function pauseMusic() {       
+        let s = await sound?.getStatusAsync();
+        setTimePause(s.positionMillis);       
+        await sound?.pauseAsync();
     };
     async function setMuted() {
-
-        if (volume !== 0.0) {
-            return await setPlayVolume(0.0);
+        if (volume !== 0) {
+            return await setPlayVolume(0);
         }
-        await setPlayVolume(0.5);
+        await setPlayVolume(5);
     }
-    function playNextMusic() {
-       
+    function playNextMusic(a: number) {
         stopMusic();
-        playMusic();
+        setTimePause(0);
+        let s = fileIndex.current === songs.length-1 ?  0 : fileIndex.current + a
+        
+        playMusic(s);
     };
     async function setPlayVolume(a) {
         setVolume(a);
-        await sound?.setVolumeAsync(a);
-
-    }
+        await sound?.setVolumeAsync(a/10);
+    };
+    function viewVolumePanel() {
+        Animated.timing(opacity, {
+            toValue: opacity._value === 1 ? 0 : 1,
+            duration: 500,
+            useNativeDriver: true,
+        }).start();
+    };
+    const shufleListMusic = () => {
+        const ss = songs.sort(() => Math.random() - 0.5);
+        setSongs([...ss]);
+    };
     return (
         <View style={styles.main_block}>
-            <View style={{
-                paddingHorizontal: 5,
-                borderRadius: 10,
-                width: '100%',
-                height: '85%',
-                backgroundColor: "#fff",
-                paddingBottom: 10
-            }}
-            >
-                <Text style={styles.songs_string}>{files?.length} SONGS</Text>
+            <View style={styles.wrap_block}>                
                 <FlatList
-                    data={files}
+                    data={songs}
                     numColumns={1}
-
+                    initialNumToRender={20}
+                    style={{ paddingVertical: 5 }}                    
+                    ListHeaderComponent={()=><Songs songs={songs.length} />}
                     ListEmptyComponent={() => <Text style={styles.empty}>The folder 'Music' is empty</Text>}
-                    keyExtractor={item => item.id}
+                    keyExtractor={item => item.filename}
                     renderItem={({ item, index }) => <Item title={item} index={index} />}
-                />
+                />                
             </View>
-            <View style={styles.player}>
-            <Ionicons name='play-skip-back' onPress={playNextMusic} size={40} color="#ae3bec" />
-                {sound === null ?
-                    <Ionicons  name='play-circle-outline' onPress={() => playMusic()} size={50} color="#ae3bec" />
-                    :
-                    <Ionicons name='pause-circle-outline' onPress={pauseMusic} size={50} color="#ae3bec" />
-                }
-                {/* <Ionicons name='stop' onPress={stopMusic} size={45} color="#ae3bec" /> */}
-                <Ionicons name='play-skip-forward' onPress={playNextMusic} size={40} color="#ae3bec" />
-
-                <Ionicons
-                    name={volume !== 0.0 ? 'volume-medium-outline' : 'volume-mute-outline'}
-                    onPress={() => setViewVolume(!viewVolume)}
-                    onLongPress={setMuted}
-                    size={45}
-                    color="#ae3bec"
-
-
-
-                />
-            </View>
-            {viewVolume ?
-                <View style={styles.volume}>
-                    <Ionicons name='add-outline' onPress={() => setPlayVolume(volume >= 0.9 ? 1.0 : volume + 0.1)} size={45} color="#ae3bec" />
-                    <Text style={styles.text_volume}>{(volume * 10).toFixed(0)}</Text>
-                    <Ionicons name='remove-sharp' onPress={() => setPlayVolume(volume <= 0.1 ? 0.0 : volume - 0.1)} size={45} color="#ae3bec" />
-                </View> : null}
+                {songs.length === 0 ?
+                <Text></Text>
+                :
+                <View style={styles.player}>
+                    <Ionicons name='play-skip-back' onPress={() => playNextMusic(-1)} size={40} color="#ae3bec" />
+                    {timefrombegin === 0 || timepause > 0 ?
+                        <Ionicons name='play-circle-outline' onPress={() => playMusic(fileIndex.current)} size={50} color="#ae3bec" />
+                        :
+                        <Ionicons name='pause-circle-outline' onPress={pauseMusic} size={50} color="#ae3bec" />
+                    }
+                    <Ionicons name='play-skip-forward' onPress={() => playNextMusic(1)} size={40} color="#ae3bec" />
+                    <Ionicons
+                        name='shuffle'
+                        onPress={shufleListMusic}
+                        onLongPress={setMuted}
+                        size={45}
+                        color="#ae3bec"
+                    />
+                    <Ionicons
+                        name={volume !== 0.0 ? 'volume-medium-outline' : 'volume-mute-outline'}
+                        onPress={viewVolumePanel}
+                        onLongPress={setMuted}
+                        size={45}
+                        color="#ae3bec"
+                    />
+                    <Animated.View style={[styles.volume, { opacity }]}>
+                        <Ionicons name='add-outline' onPress={() => setPlayVolume(volume >= 10 ? 10 : volume + 1)} size={45} color="#fff" />
+                        <Text style={styles.text_volume}>{volume}</Text>
+                        <Ionicons name='remove-sharp' onPress={() => setPlayVolume(volume <= 1 ? 0 : volume - 1)} size={45} color="#fff" />
+                    </Animated.View>
+                </View>}
         </View>
     );
 }
-export default HomeScreen;
+export default SongsPlayer;
 const styles = StyleSheet.create({
     main_block: {
         flex: 1,
@@ -190,42 +212,49 @@ const styles = StyleSheet.create({
         alignContent: 'center',
         padding: 8,
         paddingTop: 30,
-        
+
     },
-    songs_string: {
-        fontSize: 24,
-        textAlign: 'center',
-        borderBottomColor: "#ae3bec",
-        borderBottomWidth: 1,
-        color: '#ae3bec',
-        fontWeight: 'bold'
-    },
-    song_wrapper: {
-        paddingHorizontal: 8,
-        flexDirection: 'row',
+    wrap_block: {
+        paddingHorizontal: 5,
         borderRadius: 10,
-       
+        width: '100%',
+        height: '85%',
+        backgroundColor: "#ddd",
+        paddingBottom: 10
+    },
+
+    song_wrapper: {
+
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between'
     },
     song: {
 
-        width: '86%',
         textTransform: 'lowercase',
         color: "#ae3bec",
         fontSize: 18,
         textAlign: 'left',
     },
+    song_active: {
+        fontWeight: 'bold',
+        textTransform: 'lowercase',
+        color: "#46431a",
+        
+        fontSize: 18,
+        textAlign: 'left',
+
+    },
     song_time: {
         color: "#ae3bec",
         fontSize: 18,
         width: 40,
-        textAlign: 'right'
+        textAlign: 'right',
     },
     player: {
         position: 'absolute',
         bottom: 60,
-        backgroundColor: "#fff",
+        backgroundColor: "#ddd",
         width: '100%',
         borderRadius: 10,
         alignItems: 'center',
@@ -240,12 +269,13 @@ const styles = StyleSheet.create({
     },
     volume: {
         position: 'absolute',
-        right: 55,
-        top: '30%',
+        right: 5,
+        bottom: 60,
         width: 60,
         height: 200,
+
         borderRadius: 30,
-        backgroundColor: '#fff',
+        backgroundColor: '#ae3bec',
         justifyContent: 'space-between',
         alignItems: 'center',
         borderColor: '#ae3bec',
@@ -254,6 +284,6 @@ const styles = StyleSheet.create({
     text_volume: {
         fontSize: 35,
         fontWeight: 'bold',
-        color: '#ae3bec'
+        color: '#fff'
     }
 });

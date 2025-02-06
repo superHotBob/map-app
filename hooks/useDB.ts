@@ -90,8 +90,8 @@ export function SecondsToTime(i:number) {
 export function Duration(a:number, b:number) {
     const time = (b - a) / 1000;
     const hours = +(time / 3600).toFixed(0);   
-    const mins = Math.trunc((time - hours * 3600) / 60);
-    const sec = time - hours * 3600 - mins * 60;
-    return ((hours === 0 ? '0:' : hours + ' h ') + (mins < 10 ? mins : mins) + ':' +
+    const mins = Math.trunc((time - hours * 3600) / 60);    
+    const sec = time - hours * 3600 - mins * 60 ;
+    return ((hours === 0 ? '00:' : hours + ' h ') + (mins < 10 ? '0' + mins.toString() : mins) + ':' +
         (Math.round(sec) < 10 ? '0' + Math.round(sec) : Math.round(sec)));
 }

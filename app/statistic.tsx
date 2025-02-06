@@ -1,5 +1,5 @@
 import { StyleSheet, View, Text, Pressable, FlatList } from "react-native";
-import { useCallback,  useState } from "react";
+import { useCallback, useState } from "react";
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as SQLite from 'expo-sqlite';
 import { Path_date } from "@/scripts/functions";
@@ -15,36 +15,40 @@ interface MyArray {
     idpath: number,
     type: string
 };
- 
+
 
 function Statistic() {
     const router = useRouter();
     const [path, setPath] = useState<MyArray[]>([]);
-    const [type, setType ] = useState('all')
-    
+    const [type, setType] = useState('all')
+
     useFocusEffect(
-        useCallback(() => {            
+        useCallback(() => {
             async function GetPaths() {
+                
                 const db = await SQLite.openDatabaseAsync('tracker', {
                     useNewConnection: true
                 });
+            
                 const tab = await db.getAllAsync('SELECT name FROM sqlite_master WHERE type = "table"');
-                if (tab.length === 0 ) {
-                    return ;
+                if (tab.length === 0) {
+                    return;
                 };
-                const paths = await db.getAllAsync('SELECT * FROM paths ORDER BY begintime DESC');           
-                
+                const paths = await db.getAllAsync('SELECT * FROM paths ORDER BY begintime DESC');
+
                 let my_path = [...paths];
-                if ( type === 'all') {                    
+                if (type === 'all') {
                     return setPath(paths)
                 }
-                let new_path = my_path.filter(i=>i.type === type)
-                
-                setPath(new_path) 
-                                      
+                let new_path = my_path.filter(i => i.type === type)
+
+                setPath(new_path)
+               const dir =  db.serializeAsync('tracker');
+                console.log(dir)
+
             };
             GetPaths();
-        }, [type])
+        }, [])
     );
     type Image = {
         begintime: number,
@@ -54,10 +58,21 @@ function Statistic() {
         id: number,
         path: number,
         images: number,
-        interval: number        
+        interval: number
     }
-    function getFilter() { 
-        setType(type === 'all' ? 'running' : type==='running' ? 'walking': 'all')       
+    function getFilter(i:string) {        
+        if( i === 'Path') {
+            let so = path.sort((a,b)=>a.path - b.path);           
+            setPath([...so])
+        } else if (i === 'Time') {
+            let so = path.sort((a,b)=>(a.begintime -  a.endtime) - (b.begintime -  b.endtime));
+           
+            setPath([...so])
+        } else {
+            let so = path.sort((a,b)=>(b.begintime - a.begintime));
+           
+            setPath([...so])
+        }
        
     }
     function ViewImage(i: Image) {
@@ -74,23 +89,28 @@ function Statistic() {
             }
         })
     };
-    const Item = ({ i, index }:{i:Image, index: number}) => (
+    const Item = ({ i, index }: { i: Image, index: number }) => (
         <Pressable key={i.endtime} onPress={() => ViewImage(i)} style={[styles.pathBlock, { backgroundColor: index % 2 ? '#fff' : '#ddd' }]}>
-            <Text style={[styles.text, { paddingHorizontal: 5}]}>
-                {Number(i.name) ? Path_date(i.name,'ru-RU') : i.name}
+            <Text style={[styles.text, { width: '50%', fontSize: 15 }]}>
+                {Number(i.name) ? Path_date(i.name, 'en-GB') : i.name}
             </Text>
-            <Text style={styles.text}>{Duration(i.begintime, i.endtime)} </Text>
-            <Text  style={styles.text}>{i.path} m</Text>            
+            <Text style={styles.text}>{Duration(i.begintime, i.endtime)}</Text>
+            <Text style={styles.text}>{i.path} m</Text>
         </Pressable>
-    );    
+    );
+    
+    const Header = () => (
+        <View style={styles.pathBlock}>
+            {['Name', 'Time', 'Path'].
+                map(i => <Text key={i} onPress={() => getFilter(i)} style={[styles.date, { width: i === 'Name' ? '50%' : '25%' }]}>{i}</Text>)}
+        </View>
+    );
+
     return (
-        <View style={styles.mainBlock}>           
-            <View style={styles.pathBlock}>
-                {['Name', 'Time', 'Path'].
-                    map(i => <Text key={i} onPress={i === 'Type' ? getFilter : null} style={styles.date}>{i}</Text>)}
-            </View>
-            <FlatList               
-                data={path}                
+        <View style={styles.mainBlock}>
+            <FlatList
+                data={path}
+                ListHeaderComponent={() =><Header/>}
                 ListEmptyComponent={<Text style={styles.nodata}>NO DATA</Text>}
                 keyExtractor={item => item.endtime + ''}
                 renderItem={({ item, index }) => <Item i={item} index={index} />}
@@ -102,13 +122,13 @@ export default Statistic;
 const styles = StyleSheet.create({
     mainBlock: {
         width: '100%',
-        backgroundColor: '#fff',
+        backgroundColor: '#f3ecec',
         paddingTop: 30,
         paddingBottom: 25,
-        flex: 1,        
-    },    
+        flex: 1,
+    },
     pathBlock: {
-        paddingVertical: 15,
+        paddingVertical: 10,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between'
@@ -116,19 +136,18 @@ const styles = StyleSheet.create({
     nodata: {
         textAlign: 'center',
         fontSize: 30,
-        marginTop: 100 
+        marginTop: 100
     },
     date: {
-        width: '33%',
         fontWeight: 'bold',
         textAlign: 'center',
         fontSize: 25,
         color: 'blue',
         letterSpacing: 1.4,
         fontFamily: 'Roboto'
-    },    
+    },
     text: {
-        width: '33%',
+        width: '25%',
         textAlign: 'center',
         letterSpacing: 1.2,
         fontSize: 20

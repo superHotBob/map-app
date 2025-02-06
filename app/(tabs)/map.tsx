@@ -1,11 +1,14 @@
-import { StyleSheet,  View, Dimensions, Alert, Text, TouchableHighlight, StatusBar } from 'react-native';
-import { useEffect, useState, useRef, Key } from 'react';
+import { StyleSheet,  
+  View, Dimensions, Alert, 
+  Text, TouchableHighlight, StatusBar
+} from 'react-native';
+import { useState, useRef, Key, useCallback, useMemo } from 'react';
 import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import * as FileSystem from 'expo-file-system';
 import getDistance from 'geolib/es/getDistance';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { addpoint, deletepoint, setname } from '@/reduser';
@@ -15,6 +18,8 @@ import { useKeepAwake } from 'expo-keep-awake';
 const { height, width } = Dimensions.get('window');
 import * as Brightness from 'expo-brightness';
 import * as Speech from 'expo-speech';
+import MapHeader from '@/components/MapHeader';
+
 
 
 export default function Map() {
@@ -24,23 +29,26 @@ export default function Map() {
   const dispatch = useDispatch();
   const [startStop, setStartStop] = useState(true);
   const [path, setPath] = useState(0);
-  const [distance, setDistance] = useState(0);
+  const [distance, setDistance] = useState<number>(1);
   const [typeMap, settypeMap] = useState<string>('standard');
   const [zoom, setZoom] = useState(12); 
-  const [speed, setSpeed] = useState(0);
- 
-
+  const [speed, setSpeed] = useState<number|0>(0);
 
   const {sound, nodes, type, name , time} = useSelector((state) => state.track);
 
-  useEffect(() => {
-    if (nodes.length === 1) {     
-      setStartStop(true);
-      setDistance(0);
-      setPath(0);      
-    }
   
-  }, []);
+  useFocusEffect( useCallback(() => {   
+    return () => {
+      Speech.speak('Focus lost');
+    };
+  }, []));
+
+  const toObject = useMemo(() => {
+    const s = nodes.map(i => Object.assign({}, { latitude: i[0], longitude: i[1] }))
+
+    return s
+  },[nodes])
+
 
   async function ChangeBrigthness() {
     const { status } = await Brightness.requestPermissionsAsync();
@@ -49,29 +57,28 @@ export default function Map() {
     }
   };
 
-  async function GetCoord() {   
+  async function GetCoord() {  
     const { coords : { speed, latitude, longitude}} = await Location.getCurrentPositionAsync({ timeInterval: +time, accuracy: 5 });
-    const x = 0.001-Math.random()/500; 
+    // const x = 0.001 - Math.random()/500; 
     
     const point = [
-      +(latitude).toFixed(7),
-      +(longitude).toFixed(7),
+      +(latitude ).toFixed(7),
+      +(longitude  ).toFixed(7),
       type,
       +(speed * 3.6).toFixed(1)
     ];
     dispatch(addpoint(point));    
     getPath(latitude, longitude);
     if ( sound ) {
-      const thingToSay = (speed * 3.6).toFixed(1);
+      const thingToSay = (speed??10 * 3.6).toFixed(1);
       Speech.speak(thingToSay);
-    }
-    
+    }    
     if (type === 'running') {
-      setSpeed(+(speed * 3.6).toFixed(1));      
+      setSpeed(+(speed * 3.6).toFixed(1));  
+     
     } else {
       getDistanceToBegin(latitude, longitude);
-    }
-  
+    }  
   };
 
   function getDistanceToBegin(a:number,b:number) {
@@ -101,9 +108,7 @@ export default function Map() {
     if (!startStop) return;
     if (i.coordinate.timestamp - timeRef.current < +time * nodes.length - 10000) return;
     GetCoord();    
-  };
-  
-  
+  };  
 
   const SaveMessage = () => {
     Alert.alert('Сохранить путь',
@@ -126,7 +131,10 @@ export default function Map() {
         body: JSON.stringify(nodes)
       }
     );
-   
+    const gifDir = FileSystem.documentDirectory;
+    const dirInfo = await FileSystem.getInfoAsync(gifDir);
+    const file =  dirInfo.uri + '/' + name + '.txt' ; 
+    await FileSystem.writeAsStringAsync(file, JSON.stringify(nodes));
     const localUri = await captureRef(refzoom, {
       fileName: name,
       format: 'jpg',
@@ -159,10 +167,7 @@ export default function Map() {
     router.dismissAll();
     dispatch(deletepoint());
     dispatch(setname(''));
-  };
-
-  
-  
+  }; 
 
   const Zoom = async (a: number) => {
     let ss = await refzoom.current?.getCamera();
@@ -174,24 +179,11 @@ export default function Map() {
     settypeMap(typeMap === 'satellite' ? 'standard' : 'satellite')
   };
 
-  const toObject = (a) => {
-    const s = a.map(i => Object.assign({}, { latitude: i[0], longitude: i[1] }))
-
-    return s
-  }
-  const int = timeRef.current;
+ 
   return (
     <SafeAreaView style={styles.main_block}>      
-      <StatusBar barStyle='light-content' backgroundColor="#000" />
-      <View style={styles.distance}>
-        {type === 'walking' ?
-          <Text style={styles.distance_text}>To back{'\n'}{distance} m</Text>
-          :
-          <Text style={styles.distance_text}>Speed{'\n'}{speed} km/h</Text>
-        }
-        <Text style={[styles.distance_text, styles.path]}>Path{'\n'}{path} m</Text>
-        <Text style={styles.distance_text}>Time{'\n'} {SecondsToTime(int)} </Text>
-      </View>     
+      <StatusBar barStyle='dark-content' backgroundColor="#ddd"  />      
+      <MapHeader distance={100} speed={speed} path={path} type={type} />    
       <MapView
         ref={refzoom}
         mapType={typeMap}
@@ -212,7 +204,7 @@ export default function Map() {
         }}
       >
         <Polyline
-          coordinates={toObject(nodes)}
+          coordinates={toObject}
           strokeColor="#3d4eea"
           strokeWidth={3}
         />
@@ -309,18 +301,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: height - 25,
     width: '100%'
-  },
-  distance: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  distance_text: {
-    fontSize: 22,
-    width: '33%',
-    textAlign: 'center',
-    height: 55,
-    paddingHorizontal: 5,
-  },
+  }, 
   messages: {
     padding: 20,
     height: 'auto',
@@ -376,11 +357,6 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 8
   },
-  path: {
-    backgroundColor: "#ddd"
-  },
-
-
   buttons: {
     height: 60,
     flexDirection: 'row',

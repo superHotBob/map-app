@@ -19,8 +19,7 @@ export default function TabLayout() {
           bottom: 0,
           height: 60          
         },
-        tabBarShowLabel: false,
-        tabBarIconStyle: {color: "#fff"}      
+        tabBarShowLabel: false,             
       }}
     >
       <Tabs.Screen
@@ -28,7 +27,7 @@ export default function TabLayout() {
         options={{ 
                           
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon  name={focused ? 'home' : 'home-outline'}  color='#fff'/>
+            <TabBarIcon  name={focused ? 'home' : 'home-outline'}/>
           )
         }}
       />       
@@ -37,7 +36,7 @@ export default function TabLayout() {
         options={{  
           href: name.length > 0 ? '/(tabs)/map' : null ,          
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon name={focused ? 'map' : 'map-outline'} color='#fff' />
+            <TabBarIcon name={focused ? 'map' : 'map-outline'} />
           ),
         }}
       />
@@ -46,7 +45,7 @@ export default function TabLayout() {
         options={{  
           href: name.length > 0 ? '/(tabs)/camera' : null,          
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon name={focused ? 'camera' : 'camera-outline'} color='#fff' />
+            <TabBarIcon name={focused ? 'camera' : 'camera-outline'}/>
           ),
         }}
       />
@@ -54,7 +53,7 @@ export default function TabLayout() {
         name="media"       
         options={{                   
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon name={focused ? 'musical-notes' : 'musical-notes-outline'} color='#fff' />
+            <TabBarIcon name={focused ? 'musical-notes' : 'musical-notes-outline'}  />
           ),
         }}
       />
@@ -62,7 +61,7 @@ export default function TabLayout() {
         name="setting"       
         options={{                   
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon name={focused ? 'settings' : 'settings-outline'} color='#fff' />
+            <TabBarIcon name={focused ? 'settings' : 'settings-outline'}  />
           ),
         }}
       />

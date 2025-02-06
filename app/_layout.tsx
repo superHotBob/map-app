@@ -68,34 +68,30 @@ export default function RootLayout() {
             headerTintColor: color.tint,
             headerTitleAlign: 'center',
             headerTitleStyle: {
-              fontSize: 25,
+              fontSize: 23,
               fontFamily: 'SpaceMono',
               color: color.tint
             }
           }}
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          {/* <Stack.Screen
-            name="pathwalk"
-            options={{
-             
-              
+          <Stack.Screen
+            name="notification"
+            options={{              
               title: 'Photos',
               headerShown: false
             }}
-          /> */}
+          />
           <Stack.Screen
             name="statistic"
-            options={{
-              
+            options={{              
               title: 'Statistic',
               headerShown: true
             }}
           />
           <Stack.Screen
             name="pathmap"
-            options={{
-              headerTitleAlign: 'center',
+            options={{              
               title: 'map',
               headerLargeTitle: true,
               headerShown: true
@@ -103,26 +99,20 @@ export default function RootLayout() {
           />
           <Stack.Screen
             name="background"
-            options={{
-              headerTitleAlign: 'center',
-              title: 'Select background',
-              headerLargeTitle: true,
-              headerShown: true
+            options={{             
+              title: 'Select background'              
             }}
           />
           <Stack.Screen
             name="paths"
-            options={{
-              headerTitleAlign: 'center',
-              title: 'My paths',
-              headerShown: true
+            options={{             
+              title: 'My paths'              
             }}
           />
           <Stack.Screen
             name="start"
-            options={{
-              headerTitleAlign: 'center',
-              title: 'Begin path',
+            options={{             
+              title: 'Begin new path',
               headerShown: true
             }}
           />
@@ -133,22 +123,4 @@ export default function RootLayout() {
     </Provider>
   );
 }
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 20,
-    backgroundColor: '#ecf0f1',
-    padding: 8,
-    textAlign: 'center',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  text: {
-    marginVertical: 16
-  }
-});
+

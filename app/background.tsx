@@ -2,40 +2,50 @@ import { useEffect, useState } from "react";
 import { FlatList, View, Text , Pressable, Image, Dimensions, StyleSheet} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-const { width } = Dimensions.get('window');
+const { width,height } = Dimensions.get('window');
+import * as MediaLibrary from 'expo-media-library';
+
 
 export default function Background() {
-    const [images, setImages] = useState([]);
+    const [images, setImages] = useState<boolean|null|Array<T>>(false);
     useEffect(() => {
-        async function GetImages() {
-            let response = await fetch('https://superbob.pythonanywhere.com/images');
-            let images = await response.json();
-            let all_images = images.map(i=>i.slice(0,-4))
-            setImages(all_images); 
-                    
+        async function GetImages() {                  
+            const id = await MediaLibrary.getAlbumAsync('DCIM');
+            if ( id === null) {
+                return setImages(null)
+            }
+            const {assets} = await MediaLibrary.getAssetsAsync({'album':id});
+            const files = assets.map(i=>i.uri);
+            setImages(files);            
         }
         GetImages();
     }, [])
     const SetBackground = async (i:string) => {
         await AsyncStorage.setItem('background',i);
         router.back();       
-    }
-    const Item = ({ item, index }: { index: number, item:  string }) => (
-        <Pressable style={styles.imageTextPress} onPress={()=>SetBackground(item)}>
+    };
+    const Item = ({ item }: { item:  string }) => (
+        <Pressable 
+            style={styles.imageTextPress} 
+            onPress={()=>SetBackground(item)}
+        >
           <Image
-            style={{ width: (width / 2) - 15, height: width / 2 }}
-            source={{ uri: 'https://superbob.pythonanywhere.com/image?name=' + item}}
+            style={{resizeMode: 'cover', width: (width / 2) - 15, height: height/2}}
+            source={{ uri: item}}
           />          
         </Pressable>
-      );
+    );
     return (
-        <View style={{padding: 10,backgroundColor: '#fff'}}>
-            <StatusBar />
+        <View style={{padding: 10,backgroundColor: '#fff'}}>           
             <FlatList
                 data={images}
                 numColumns={2}
-                ListEmptyComponent={<Text>waiting</Text>}                
+                ListEmptyComponent={<View >{
+                    images ?'waiting' : images === null ? 
+                    <Text style={styles.message}>Folder DCIM not exist</Text>
+                    :
+                    <Text style={styles.message}>Folder DCIM is empty</Text>
+                }</View>}                
                 keyExtractor={item => item}
                 renderItem={({ item, index }) => <Item item={item} index={index} />}
             />
@@ -48,4 +58,9 @@ const styles = StyleSheet.create({
         marginBottom: 9,
         marginRight: 10
     },
+    message: {
+        fontSize: 35,
+        textAlign: 'center',
+        marginVertical: '95%'
+    }
 })

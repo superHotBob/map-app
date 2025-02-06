@@ -17,6 +17,7 @@ import { Colors } from '@/constants/Colors';
 import Chart from '@/components/chart';
 
 
+
 const color = Colors.light.tint;
 interface thisPath {
     speed: number,
@@ -31,14 +32,15 @@ const Carusel = () => {
 
 
     const { start, end, name, id: id_path, path, interval } = useLocalSearchParams();
-   
+    const gifDir = FileSystem.documentDirectory
     const [data, setData] = useState([]);
     const [labels, setLabels] = useState([]);
     const params = useLocalSearchParams();
     useFocusEffect(useCallback(() => {
         async function ReadPath() {
-            const responce = await fetch(`https://superbob.pythonanywhere.com/path?name=${name}`);
-            const path = await responce.json();
+            const dirInfo = await FileSystem.getInfoAsync(gifDir);
+            const mypath = await FileSystem.readAsStringAsync(dirInfo.uri + '/'+ name + '.txt', {encoding: 'utf8'})
+            const path = JSON.parse(mypath);          
             const labels = Array.from({ length: path.length*Number(interval)/60000 })
                 .map((i, index) => Array.from({length: 60000/Number(interval)})
                 .map((i,indexa)=> index + '.' + indexa * Number(interval)/1000)
@@ -97,18 +99,19 @@ const Carusel = () => {
     }
     return (
         <View style={styles.mainBlock}>            
-            <Stack.Screen
+            <Stack.Screen            
                options={{
-                title: Number(params.name) ? Path_date(params.name, 'ru-RU') : params.name,
+                
+                title: Number(params.name) ? Path_date(params.name) : params.name,
                 headerTitleAlign: 'center',
                 headerRight: () => <Ionicons onPress={showToast} name="trash-outline" color={color} size={35} />
               }}
             />           
             <Text style={styles.data}>{Path_date(start, 'ru-RU')}</Text>
-            <Text style={styles.data}><Text style={styles.keys}>Duration:</Text> {Duration(+start, +end)} sec</Text>
+            <Text style={styles.data}><Text style={styles.keys}>Duration:</Text> {Duration(+start, +end)}</Text>
             <Text style={styles.data}><Text style={styles.keys}>Distance:</Text> {path} m</Text>
             <Text style={styles.data}><Text style={styles.keys}>Speed:</Text> {Speed(path, end, start)} km/h</Text>
-            <Text style={styles.data}><Text style={styles.keys}>Calories:</Text> {thispath['calories'].toFixed(2)} </Text>
+            <Text style={styles.data}><Text style={styles.keys}>Calories:</Text> {thispath['calories'].toFixed(2)} K </Text>
 
             <Text style={{ fontSize: 25, fontWeight: 'bold', marginTop: 20 }}>Speed</Text>
            

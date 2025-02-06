@@ -8,9 +8,9 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/icon.png",
+      "image": "./assets/images/adaptive-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ff77ff"
+      "backgroundColor": "#ae3bec"
     },
     "ios": {
       "supportsTablet": true,
@@ -20,12 +20,14 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
-      },
+      },     
       "permissions": [
-        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.WAKE_LOCK",
+        "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
+        "android.permission.MICROPHONE",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.ACCESS_MEDIA_LOCATION",
@@ -43,8 +45,7 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "output": "static"      
     },
     "plugins": [
       "expo-router",
@@ -59,7 +60,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow tracker to access your camera"
+          "cameraPermission": "Allow tracker to access your camera."
+        }
+      ],     
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow tracker to access your microphone."
         }
       ],
       [
