@@ -37,7 +37,11 @@ const Setting = () => {
     const image = { uri: back }
     const storeData = async () => {
         try {
-            await AsyncStorage.multiSet([['weight', weight.toString()], ['time', time.toString()]]);
+            await AsyncStorage.multiSet(
+                [['weight', weight.toString()],
+                ['time', time.toString()],
+                ['sound', sound.toString()]]
+            );
             const t = await AsyncStorage.getItem('time');
             dispatch(settime(t));
             dispatch(setsound(sound));
@@ -95,7 +99,7 @@ const Setting = () => {
                     </LinearGradient>
                 </View>
                 <View >
-                    <Text style={styles.timeText} >Stop sound</Text>
+                    <Text style={styles.timeText}>{sound ? 'Stop sound':'Play sound'}</Text>
                     <Switch
                         trackColor={{ false: '#767577', true: '#4c669f' }}
                         thumbColor={sound ? '#192f6a' : '#f4f3f4'}
@@ -108,6 +112,9 @@ const Setting = () => {
                 <LinearGradient style={[styles.plusBtn, {  width: '90%' }]} colors={color}>
                     <Link href='/background' style={styles.link}>SELECT BACKGROUND</Link>
                 </LinearGradient>
+                {/* <LinearGradient style={[styles.plusBtn, {  width: '90%' }]} colors={color}>
+                    <Link href='/ble' style={styles.link}>connect</Link>
+                </LinearGradient> */}
 
                 <TouchableHighlight
                     activeOpacity={0.6}

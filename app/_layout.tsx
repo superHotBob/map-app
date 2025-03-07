@@ -2,15 +2,15 @@ import { store } from '../store';
 import { Provider } from 'react-redux';
 import 'expo-dev-client';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, Suspense } from 'react';
-import { Alert, useColorScheme, View, Text, StyleSheet, Button } from 'react-native';
+import {useColorScheme,  Text } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import ErrorBoundary from 'react-native-error-boundary'
+import { Ionicons } from '@expo/vector-icons';
+import CustomFallback from '@/components/CustomFallBack';
 
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -32,32 +32,11 @@ export default function RootLayout() {
   if (!loaded) {
     return null;
   }
-  const showAlert = () =>
-    Alert.alert(
-      'Помощь',
-      'Сам себе помоги',
-      [
-        {
-          text: 'Закрыть',
-          style: 'default',
-        }
-      ],
-      {
-        cancelable: true,
-        onDismiss: () => console.log("Closed")
-      },
-    );
  
-  const CustomFallback = (props: { error: Error, resetError: Function }) => (
-    <View style={{flex: 1, alignItems: 'center', justifyContent:'center'}}>
-      <Text style={{fontSize: 30}}>Error</Text>
-      <Text style={{ width: '80%',marginVertical: 20, fontSize: 20}}>{props.error.toString()}</Text>
-      <Button  title='back' onPress={()=>props.resetError()}/>
-    </View>
-  )
+  
 
   return (
-    <Provider store={store}>
+    <Provider store={store}>     
       <Suspense fallback={<Text>Loading...</Text>}>
       <ErrorBoundary FallbackComponent={CustomFallback}>
         <Stack
@@ -83,16 +62,25 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen
-            name="statistic"
+            name="pathdata"
             options={{              
-              title: 'Statistic',
-              headerShown: true
-            }}
-          />
+              title: 'Path data',
+              headerShown: true,
+              headerRight: () => <Ionicons color={color.tint} name='bar-chart-outline' size={35} onPress={() => router.push('/statistic')}  />,
+            }}            
+          />         
           <Stack.Screen
             name="pathmap"
             options={{              
               title: 'map',
+              headerLargeTitle: true,
+              headerShown: true
+            }}
+          />
+           <Stack.Screen
+            name="statistic"
+            options={{              
+              title: 'Statistics',
               headerLargeTitle: true,
               headerShown: true
             }}
@@ -119,7 +107,7 @@ export default function RootLayout() {
           <Stack.Screen name="+not-found" />
         </Stack>
       </ErrorBoundary>
-      </Suspense>
+      </Suspense>      
     </Provider>
   );
 }

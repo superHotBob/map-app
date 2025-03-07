@@ -15,8 +15,8 @@ import { Path_date } from "@/scripts/functions";
 const Start: React.FC = () => {   
     const router = useRouter();
     const dispatch = useDispatch();  
-    const [typemove, setTypeMove ] = useState('walking');
-    const [name, setName] = useState('');     
+    // const [typemove, setTypeMove ] = useState('running');
+    const [name, setName] = useState(Path_date(Date.now(),'ru-RU'));     
     const [] = useFonts({
         'SpaceMono': require('../assets/fonts/SpaceMono-Regular.ttf'),        
     });
@@ -25,16 +25,17 @@ const Start: React.FC = () => {
         if (status !== 'granted') {            
             return;
         };        
-        const {coords} = await Location.getCurrentPositionAsync({accuracy: 5});       
+        const { coords : { speed,  latitude, longitude}} = await Location.getCurrentPositionAsync({accuracy: 5});       
+       
         const first_point = [
-            coords.latitude ,
-            coords.longitude ,            
-            typemove,
-            0
+            latitude ,
+            longitude ,            
+            'running',
+            speed
         ];       
         dispatch(addpoint(first_point));
         dispatch(setname(name.trimEnd()));  
-        dispatch(settype(typemove));
+        // dispatch(settype(typemove));
         router.push('/(tabs)/map');
         setName('');           
     };
@@ -44,7 +45,7 @@ const Start: React.FC = () => {
     
     return (
         <View style={styles.mainBlock}>
-            <Text style={styles.mainText}>Select</Text>
+            {/* <Text style={styles.mainText}>Select</Text>
             <View style={styles.selector}>                
                 <Text 
                     onPress={()=>setTypeMove('walking')} 
@@ -70,14 +71,15 @@ const Start: React.FC = () => {
                 >
                     RUNNING
                 </Text>
-            </View>            
+            </View>             */}
             <Text style={{fontFamily: 'SpaceMono', fontSize: 28 }}>Enter path name or</Text>
             <Button   onPress={setDateName} title="Set name how date" />
             <TextInput
                 style={styles.input}
-                value={Number(name) ? Path_date(name,'ru-RU') : name}
+                value={Number(name) ? Path_date(Date.now(),'ru-RU') : name}
                 placeholder="My best walk"
                 autoFocus
+                defaultValue={Path_date(Date.now(),'ru-RU')}
                 maxLength={18}
                 cursorColor="blue"
                 onChangeText={setName}
@@ -85,7 +87,7 @@ const Start: React.FC = () => {
                 autoCapitalize='sentences'                
             />
             <TouchableHighlight disabled={name.length < 5} style={{ width: '90%',borderRadius: 28 }} onPress={StartPath}>
-                <Text style={[styles.btnText,{width: '100%'}]}>start {typemove} </Text>
+                <Text style={[styles.btnText,{width: '100%'}]}>start movie </Text>
             </TouchableHighlight>
         </View>
     );

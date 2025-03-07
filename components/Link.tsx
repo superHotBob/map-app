@@ -14,7 +14,7 @@ export default function MyLink({ path }: { path: string }) {
         return null;
     }
     return (
-        <Link href={'/' + path}>
+        <Link href={'/' + path.replace(' ','')}>
             <LinearGradient
                 style={styles.btn1}
                 colors={color}

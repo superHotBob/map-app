@@ -1,9 +1,5 @@
-import {
-    View, Text, StyleSheet,
-    Dimensions, StatusBar, Button, Image
-} from 'react-native';
+import {View, Text, StyleSheet,StatusBar, Button } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-
 import { useState, useCallback, useEffect } from 'react';
 import * as SQLite from 'expo-sqlite';
 import { Stack } from 'expo-router';
@@ -15,7 +11,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Duration } from '@/hooks/useDB';
 import { Colors } from '@/constants/Colors';
 import Chart from '@/components/chart';
-
 
 
 const color = Colors.light.tint;
@@ -44,16 +39,13 @@ const Carusel = () => {
             const labels = Array.from({ length: path.length*Number(interval)/60000 })
                 .map((i, index) => Array.from({length: 60000/Number(interval)})
                 .map((i,indexa)=> index + '.' + indexa * Number(interval)/1000)
-            );
-           
+            );           
             setLabels(labels);
             const data = path.map(i => i[3]);
             setData(data);
-
         }
         ReadPath();
-    }, [])
-    );
+    }, []));
     useFocusEffect(
         useCallback(() => {
             async function GetAssets() {
@@ -62,8 +54,7 @@ const Carusel = () => {
                 });
                 const path = await db.getAllAsync('SELECT * FROM run WHERE name =  ? ', name);
 
-                setThisPath(path[0]);
-                
+                setThisPath(path[0]);                
             };
             GetAssets();
         }, [])

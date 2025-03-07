@@ -1,7 +1,9 @@
 import { 
   ImageBackground,
   StatusBar,
-  StyleSheet 
+  StyleSheet,
+  Button, 
+  View
 } from 'react-native';
 import MyLink from '@/components/Link';
 import { useCallback, useState } from 'react';
@@ -27,10 +29,10 @@ const HomeScreen = () => {
     <ImageBackground
       style={styles.main_block}
       source={image}         
-    >
+    >      
       <StatusBar  barStyle="dark-content"  />      
       <MyLink path="paths" />
-      <MyLink path="statistic" />
+      <MyLink path="path data" />
       <MyLink path="start" />     
     </ImageBackground>
   );

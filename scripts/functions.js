@@ -38,3 +38,16 @@ export function SecToMin(a) {
     let sec = a - mins * 60;
     return mins + ':' + (sec >= 10 ? sec : '0' + sec)
 }
+export function ConverterToDay(a) {
+    const d = new Date(a);
+    return d.getDate();
+};
+export  function Converter(a, b, c) {
+    const d = new Date(a);
+    if (c === 1 && b !== 1) {
+        return (d.getHours() + ':' + (d.getMinutes() > 10 ? d.getMinutes() : '0' + d.getMinutes()))
+    } else if (b === 1) {
+        return (d.getDate() + '.' + 0 + (1 + d.getMonth()))
+    }
+    return d.getDate() + '.0' + (1 + d.getMonth())
+}

@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   nodes: [],
   name: '',
-  type: '',
+  type: 'running',
   time: 30000,
   weight: 80,
   sound: true 

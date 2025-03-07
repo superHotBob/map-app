@@ -58,19 +58,19 @@ export default function Map() {
   };
 
   async function GetCoord() {  
-    const { coords : { speed, latitude, longitude}} = await Location.getCurrentPositionAsync({ timeInterval: +time, accuracy: 5 });
+    const { coords : {   latitude, longitude}} = await Location.getCurrentPositionAsync({ timeInterval: +time, accuracy: 5 });
     // const x = 0.001 - Math.random()/500; 
-    
+    const speed = Math.random()*10
     const point = [
-      +(latitude ).toFixed(7),
-      +(longitude  ).toFixed(7),
+      +(latitude + 0.001 - Math.random()/500 ).toFixed(7),
+      +(longitude  + 0.001 - Math.random()/500).toFixed(7),
       type,
       +(speed * 3.6).toFixed(1)
     ];
     dispatch(addpoint(point));    
     getPath(latitude, longitude);
     if ( sound ) {
-      const thingToSay = (speed??10 * 3.6).toFixed(1);
+      const thingToSay = (speed * 3.6).toFixed(1);
       Speech.speak(thingToSay);
     }    
     if (type === 'running') {
@@ -124,13 +124,7 @@ export default function Map() {
     );
   };
   const SavePath = async () => {
-    await GetCoord();
-    await fetch(`https://superbob.pythonanywhere.com/path?name=${name}`,
-      {
-        method: "POST",
-        body: JSON.stringify(nodes)
-      }
-    );
+    await GetCoord();    
     const gifDir = FileSystem.documentDirectory;
     const dirInfo = await FileSystem.getInfoAsync(gifDir);
     const file =  dirInfo.uri + '/' + name + '.txt' ; 
@@ -142,6 +136,7 @@ export default function Map() {
       width: width,
       quality: 1,
     });
+    
     const directoryUri = `${FileSystem.documentDirectory}${'images'}`;
     let { exists } = await FileSystem.getInfoAsync(directoryUri);
     if (exists) {
@@ -158,7 +153,7 @@ export default function Map() {
       deletePath();
     } else {
       await ToDBwriteWalk(name, timeRef, photo_count, path, type,time);
-      await ToDBwriteRun(name, speed, distance, timeRef,time);
+      await ToDBwriteRun(name, speed, path, timeRef,time);
       deletePath();
     };
   };
@@ -178,7 +173,6 @@ export default function Map() {
   const setTypeMap = () => {
     settypeMap(typeMap === 'satellite' ? 'standard' : 'satellite')
   };
-
  
   return (
     <SafeAreaView style={styles.main_block}>      
@@ -195,7 +189,7 @@ export default function Map() {
         onUserLocationChange={(e) => getLocations(e.nativeEvent)}
         userLocationFastestInterval={+time}
         onLongPress={ChangeBrigthness}
-        style={[styles.map, { height: height - 245 }]}        
+        style={[styles.map, { height: height - 325 }]}        
         region={{
           latitude: nodes.slice(-1)[0][0],
           longitude: nodes.slice(-1)[0][1],
@@ -241,9 +235,7 @@ export default function Map() {
           color='#000'
         />
         <FontAwesome name="search-plus" onPress={() => Zoom(0.7)} size={45} color="#000" />
-      </View>
-
-     
+      </View>     
       <View style={[styles.btnContainer, styles.btnStartStop, { gap: 10 }]}>
         {startStop ? (
           <TouchableHighlight
@@ -299,7 +291,7 @@ const styles = StyleSheet.create({
     top: StatusBar.currentHeight,
     backgroundColor: '#fff',
     flex: 1,
-    height: height - 25,
+    height: height - 55,
     width: '100%'
   }, 
   messages: {
